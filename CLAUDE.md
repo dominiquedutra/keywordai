@@ -40,9 +40,22 @@ npm run format:check           # Prettier check
 php artisan migrate            # Run migrations
 php artisan db:seed            # Run seeders (AdminUserSeeder, SettingsSeeder)
 
-# Docker (production)
-docker-compose up -d           # Start all containers
-docker-compose restart         # Restart after config changes
+# Docker — Development (local Composer required)
+cp .env.dev.example .env                              # First time only
+composer install --ignore-platform-reqs               # First time (on host, not in Docker)
+docker compose -f docker-compose.dev.yml up --build   # First time
+docker compose -f docker-compose.dev.yml up           # Daily dev
+docker compose -f docker-compose.dev.yml exec app php artisan migrate
+docker compose -f docker-compose.dev.yml exec app php artisan tinker
+docker compose -f docker-compose.dev.yml down         # Stop
+
+# Note: Composer runs on host due to macOS Docker volume corruption issues
+
+# Docker — Production (Cloudflare Tunnel connects to 127.0.0.1:8080)
+cp .env.prod.example .env                              # First time, then edit with real creds
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml down
 ```
 
 ## Architecture
@@ -115,7 +128,7 @@ Located in `app/Console/Commands/`. Notable:
 - **UI Components**: shadcn/vue (reka-ui based) in `resources/js/components/ui/`
 - **Queue**: Database driver (default), Redis supported
 - **Build**: Vite with `@` alias → `resources/js/`
-- **Docker**: PHP-FPM + Nginx + Redis + queue worker + scheduler containers
+- **Docker**: Separate dev (`docker-compose.dev.yml`) and prod (`docker-compose.prod.yml`) compose files. Dev includes Vite HMR + Mailpit. Prod binds to `127.0.0.1` for Cloudflare Tunnel.
 
 ## Important Patterns
 

@@ -1,0 +1,62 @@
+FROM php:8.2-fpm-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    curl \
+    libpng-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    oniguruma-dev \
+    linux-headers \
+    sqlite \
+    sqlite-dev \
+    $PHPIZE_DEPS
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_sqlite \
+    mbstring \
+    zip \
+    exif \
+    pcntl \
+    bcmath \
+    gd
+
+# Install Redis and Xdebug via PECL
+RUN pecl install redis xdebug && docker-php-ext-enable redis xdebug
+
+# Configure Xdebug for development
+RUN { \
+    echo 'xdebug.mode=develop,debug'; \
+    echo 'xdebug.start_with_request=trigger'; \
+    echo 'xdebug.client_host=host.docker.internal'; \
+    echo 'xdebug.client_port=9003'; \
+    echo 'xdebug.idekey=VSCODE'; \
+} > /usr/local/etc/php/conf.d/xdebug.ini
+
+# PHP dev settings
+RUN { \
+    echo 'display_errors=On'; \
+    echo 'error_reporting=E_ALL'; \
+    echo 'memory_limit=512M'; \
+    echo 'upload_max_filesize=20M'; \
+    echo 'post_max_size=20M'; \
+} > /usr/local/etc/php/conf.d/dev.ini
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy dev entrypoint
+COPY docker/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+
+# Expose port
+EXPOSE 9000
+
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
+CMD ["php-fpm"]

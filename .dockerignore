@@ -4,8 +4,10 @@
 .gitattributes
 
 # Docker
-Dockerfile
-docker-compose.yml
+Dockerfile.dev
+Dockerfile.prod
+docker-compose.dev.yml
+docker-compose.prod.yml
 .dockerignore
 
 # Documentation
@@ -15,7 +17,8 @@ docker-compose.yml
 # Environment
 .env
 .env.*
-!.env.docker.example
+!.env.prod.example
+!.env.dev.example
 
 # Dependencies
 node_modules

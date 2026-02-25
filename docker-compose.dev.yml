@@ -1,0 +1,89 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: keywordai-dev-app
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    env_file: .env
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    networks:
+      - keywordai-dev
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: keywordai-dev-nginx
+    ports:
+      - "${HTTP_PORT:-8088}:80"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - keywordai-dev
+    depends_on:
+      - app
+      - vite
+
+  vite:
+    image: node:20-alpine
+    container_name: keywordai-dev-vite
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "5173:5173"
+    networks:
+      - keywordai-dev
+    depends_on:
+      - app
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: keywordai-dev-queue
+    working_dir: /var/www/html
+    command: sh -c "sleep 10 && php artisan queue:listen --tries=1"
+    volumes:
+      - ./:/var/www/html
+    env_file: .env
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    networks:
+      - keywordai-dev
+    depends_on:
+      - app
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: keywordai-dev-redis
+    networks:
+      - keywordai-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: keywordai-dev-mailpit
+    ports:
+      - "8025:8025"   # Web UI
+      - "1025:1025"   # SMTP
+    networks:
+      - keywordai-dev
+
+networks:
+  keywordai-dev:
+    driver: bridge
