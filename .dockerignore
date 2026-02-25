@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+!README.md
+
+# Environment
+.env
+.env.*
+!.env.docker.example
+
+# Dependencies
+node_modules
+vendor
+
+# Storage & Cache
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/logs/.gitignore
+!bootstrap/cache/.gitignore
+
+# Database (except structure)
+database/*.sqlite
+
+# Testing
+phpunit.xml
+phpunit.xml.dist
+tests
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist
+build
+npm-debug.log
+yarn-error.log
+
+# Temporary files
+tmp
+temp
+*.tmp
