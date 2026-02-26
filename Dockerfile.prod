@@ -79,9 +79,11 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/bootstrap/cache \
     && chmod -R 755 /var/www/html/database
 
-# Stash migration files so entrypoint can sync them to the db-data volume
-# (named volumes overlay the image's /var/www/html/database directory)
-RUN cp -r /var/www/html/database/migrations /tmp/migrations-from-image
+# Stash files that get hidden by named volume overlays
+# Named volumes persist old contents across rebuilds, so we stash fresh copies
+# and sync them in the entrypoint
+RUN cp -r /var/www/html/database/migrations /tmp/migrations-from-image \
+    && cp -r /var/www/html/public /tmp/public-from-image
 
 # Copy entrypoint script
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

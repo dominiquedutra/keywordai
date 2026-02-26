@@ -9,6 +9,7 @@ services:
     volumes:
       - app-data:/var/www/html/storage
       - db-data:/var/www/html/database
+      - app-public:/var/www/html/public
       - ./config:/var/www/html/config:ro
     env_file: .env
     networks:
@@ -36,6 +37,7 @@ services:
       - "127.0.0.1:${HTTP_PORT:-8080}:80"
     volumes:
       - app-data:/var/www/html/storage:ro
+      - app-public:/var/www/html/public:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - keywordai-network
@@ -130,6 +132,8 @@ volumes:
   app-data:
     driver: local
   db-data:
+    driver: local
+  app-public:
     driver: local
   redis-data:
     driver: local
