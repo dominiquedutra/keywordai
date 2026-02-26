@@ -19,6 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->job((new \App\Jobs\SyncAdsEntitiesJob())->onQueue('default'))
+                 ->hourly()
+                 ->withoutOverlapping()
+                 ->onOneServer();
+
+        $schedule->job((new \App\Jobs\SyncSearchTermsForDateJob(\Carbon\Carbon::today()))->onQueue('default'))
+                 ->everyTenMinutes()
+                 ->withoutOverlapping()
+                 ->onOneServer();
+    })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
