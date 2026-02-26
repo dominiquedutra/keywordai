@@ -41,13 +41,40 @@
 
 ## Still Needed (Production)
 
-- [ ] Run `php artisan googleads:full-sync-search-terms` on production to backfill Feb 20-25 gap
-- [ ] Deploy this commit to production
-- [ ] Run `php artisan migrate` on production
+- [x] Deploy this commit to production (done 2026-02-26)
+- [x] Run `php artisan migrate` on production (done 2026-02-26)
 - [ ] Set API keys via Settings > Global UI
+- [ ] Run `php artisan googleads:full-sync-search-terms` on production to backfill Feb 20-25 gap
 
 ## Notes
 
 - Production PHP is 8.3.6 while local is 8.5. The `composer.lock` needed `composer update` on production to downgrade Symfony 8.x → 7.x.
 - The old GitLab repo is deleted. Production now points to `https://github.com/dominiquedutra/keywordai.git`.
 - 2735 old `UNSUPPORTED_VERSION` errors exist in laravel.log from before the upgrade — consider truncating the log.
+
+---
+
+# Deploy OpenRouter to Production + Docker Fixes
+
+## Completed (2026-02-26)
+
+- [x] Reset production git to match `origin/main` (`ae7399b` — Replace Perplexity with OpenRouter)
+  - Production was stuck on old pre-leak commits (`1cdb939`), diverged from origin
+  - `git fetch origin && git reset --hard origin/main`
+- [x] Rebuild Docker containers (`docker compose -f docker-compose.prod.yml build --no-cache && up -d`)
+- [x] Run missing migrations (`add_ai_config_settings` + `replace_perplexity_with_openrouter`)
+  - Had to `docker cp` migration files into container (db-data volume overlay issue)
+- [x] Run `SettingsSeeder` to populate OpenRouter instruction settings
+- [x] Verify: `setting('ai_openrouter_model')` returns `google/gemini-2.0-flash-001`
+- [x] Fix nginx "File not found" — `$realpath_root` fails when nginx has no access to app's `public/`
+  - Changed nginx config to proxy all requests directly to PHP-FPM with hardcoded `SCRIPT_FILENAME`
+- [x] Fix `update.sh`, `backup.sh`, `deploy.sh` — add `-f docker-compose.prod.yml` flag
+- [x] Fix db-data volume migration sync — entrypoint now copies from `/tmp/migrations-from-image`
+- [x] Create `tasks/production-setup.md` with full server documentation
+- [x] Verify: app responding on `http://localhost:8080`, all 13 settings present
+
+## Discovered Issues (Fixed)
+
+1. **db-data volume hides new migrations**: Named volume overlays `/var/www/html/database`, so image rebuilds don't update migration files. Fixed by stashing migrations in `/tmp/migrations-from-image` during build and copying in entrypoint.
+2. **Nginx can't serve PHP**: `$realpath_root` / `try_files` fail because nginx container doesn't have the app's `public/` directory. Fixed by proxying everything to PHP-FPM directly.
+3. **Shell scripts missing compose file flag**: `update.sh`, `backup.sh`, `deploy.sh` used bare `docker compose` which defaults to `docker-compose.yml` (doesn't exist). Fixed to use `-f docker-compose.prod.yml`.

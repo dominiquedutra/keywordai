@@ -71,9 +71,9 @@ echo "This may take a few minutes on first run..."
 echo ""
 
 if docker-compose version &> /dev/null; then
-    COMPOSE_CMD="docker-compose"
+    COMPOSE_CMD="docker-compose -f docker-compose.prod.yml"
 else
-    COMPOSE_CMD="docker compose"
+    COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
 fi
 
 $COMPOSE_CMD pull

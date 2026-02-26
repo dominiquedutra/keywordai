@@ -17,9 +17,9 @@ echo ""
 
 # Detect compose command
 if docker-compose version &> /dev/null; then
-    COMPOSE_CMD="docker-compose"
+    COMPOSE_CMD="docker-compose -f docker-compose.prod.yml"
 else
-    COMPOSE_CMD="docker compose"
+    COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
 fi
 
 # Create backup first
