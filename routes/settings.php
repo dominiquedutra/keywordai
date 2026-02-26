@@ -24,6 +24,6 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/global', [GlobalSettingsController::class, 'index'])
         ->name('settings.global.index');
     
-    Route::post('settings/global', [GlobalSettingsController::class, 'update'])
+    Route::patch('settings/global', [GlobalSettingsController::class, 'update'])
         ->name('settings.global.update');
 });
