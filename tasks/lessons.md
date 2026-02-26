@@ -24,3 +24,46 @@
 - **What:** Google Chat webhook URL with embedded API key was hardcoded in source code.
 - **Fix:** Moved to `GOOGLE_CHAT_WEBHOOK_URL` env var.
 - **Rotation:** The exposed API key and webhook token MUST be rotated in Google Cloud Console.
+
+## Docker Named Volumes Hide Image Updates
+
+**Date:** 2026-02-26
+**Impact:** New migration files were invisible after Docker rebuild, causing deployment failure.
+
+### What happened
+- `docker-compose.prod.yml` maps `db-data` named volume to `/var/www/html/database`
+- Named volumes persist across container rebuilds — they overlay the image's directory
+- When the Docker image was rebuilt with new migration files, the volume's old contents took precedence
+- `php artisan migrate` showed "Nothing to migrate" because it couldn't see the new files
+
+### Fix applied
+1. `Dockerfile.prod`: Stash migrations to `/tmp/migrations-from-image` before volume mount
+2. `docker/entrypoint.sh`: Copy stashed migrations to the volume on startup (`cp -n` = don't overwrite)
+
+### Rules
+1. **Named volumes persist across rebuilds** — any directory mounted as a named volume won't get new files from image updates.
+2. If code files need to live in a volume-mounted path, use an entrypoint sync pattern.
+3. For urgent fixes, `docker cp` files directly into running containers.
+
+## Nginx $realpath_root Requires Local Filesystem Access
+
+**Date:** 2026-02-26
+**Impact:** All HTTP requests returned "File not found" on production.
+
+### What happened
+- Nginx config used `$realpath_root` for `SCRIPT_FILENAME` and `try_files` for routing
+- The nginx container only has `storage/` via volume mount, not the app's `public/` directory
+- `$realpath_root` resolves paths on nginx's local filesystem — fails if path doesn't exist
+- PHP-FPM received empty/invalid `SCRIPT_FILENAME`
+
+### Fix applied
+- Removed `root`, `try_files` from nginx config
+- All requests proxy directly to PHP-FPM with hardcoded `SCRIPT_FILENAME /var/www/html/public/index.php`
+- PHP-FPM resolves the path on its own filesystem (where the app code lives)
+
+### Rules
+1. When nginx and PHP-FPM run in separate containers, nginx needs either:
+   - A shared volume with the app's public files, OR
+   - Direct proxy config without filesystem-dependent directives
+2. `$realpath_root` and `try_files` require the paths to exist on nginx's local filesystem.
+3. After editing bind-mounted configs, **restart the container** (not just `nginx -s reload`).
