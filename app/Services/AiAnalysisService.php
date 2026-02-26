@@ -28,15 +28,15 @@ class AiAnalysisService
             throw new \InvalidArgumentException("Modelo inválido: '{$model}'. Use um dos seguintes: " . implode(', ', $validModels));
         }
 
-        // Obter a chave de API do modelo selecionado
-        $apiKey = config("app.ai_{$model}_api_key");
+        // Obter a chave de API do modelo selecionado (DB primeiro, .env fallback)
+        $apiKey = setting("ai_{$model}_api_key") ?: config("ai.models.{$model}.api_key");
         if (empty($apiKey)) {
             throw new \InvalidArgumentException("Chave de API para o modelo {$model} não configurada.");
         }
 
         // Coletar termos de pesquisa
         $searchTerms = $this->collectSearchTerms($date, $limit, $filters);
-        
+
         if ($searchTerms->isEmpty()) {
             return [
                 'success' => false,
@@ -50,9 +50,9 @@ class AiAnalysisService
         $negativeKeywords = $this->collectNegativeKeywords();
         $positiveKeywords = $this->collectPositiveKeywords();
 
-        // Obter instruções de IA
-        $globalInstructions = config('app.ai_instructions_global', '');
-        $modelSpecificInstructions = config("app.ai_instructions_{$model}", '');
+        // Obter instruções de IA (DB)
+        $globalInstructions = setting('ai_global_custom_instructions', '');
+        $modelSpecificInstructions = setting("ai_{$model}_custom_instructions", '');
         
         // Construir o prompt
         $prompt = $this->buildPrompt(
@@ -64,8 +64,8 @@ class AiAnalysisService
             $date
         );
 
-        // Obter nome exato do modelo
-        $modelName = config("app.ai_{$model}_model", $model);
+        // Obter nome exato do modelo (DB primeiro, .env fallback)
+        $modelName = setting("ai_{$model}_model") ?: config("ai.models.{$model}.model_name", $model);
 
         // Chamar a API de IA e medir o tempo
         $startTime = microtime(true);
@@ -309,7 +309,7 @@ class AiAnalysisService
      */
     private function callGeminiApi(string $apiKey, string $prompt): array
     {
-        $modelName = config('app.ai_gemini_model', 'gemini-pro');
+        $modelName = setting('ai_gemini_model') ?: config('ai.models.gemini.model_name', 'gemini-2.0-flash');
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent";
         
         $response = Http::withHeaders([
@@ -387,7 +387,7 @@ class AiAnalysisService
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
         ])->post($url, [
-            'model' => config('app.ai_openai_model', 'gpt-4o'),
+            'model' => setting('ai_openai_model') ?: config('ai.models.openai.model_name', 'gpt-4o-mini'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -455,7 +455,7 @@ class AiAnalysisService
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
         ])->post($url, [
-            'model' => config('app.ai_perplexity_model', 'sonar-medium-online'),
+            'model' => setting('ai_perplexity_model') ?: config('ai.models.perplexity.model_name', 'sonar-pro'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -569,7 +569,7 @@ class AiAnalysisService
      */
     public function analyzeTermsForNegation(string $model, array $terms): array
     {
-        $apiKey = config("app.ai_{$model}_api_key");
+        $apiKey = setting("ai_{$model}_api_key") ?: config("ai.models.{$model}.api_key");
         if (empty($apiKey)) {
             throw new \InvalidArgumentException("Chave de API para o modelo {$model} não configurada.");
         }

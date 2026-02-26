@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class Setting extends Model
 {
@@ -38,6 +39,15 @@ class Setting extends Model
                 return (float) $setting->value;
             case 'json':
                 return json_decode($setting->value, true);
+            case 'encrypted':
+                if (empty($setting->value)) {
+                    return '';
+                }
+                try {
+                    return Crypt::decryptString($setting->value);
+                } catch (\Exception $e) {
+                    return '';
+                }
             default:
                 return $setting->value;
         }
@@ -62,6 +72,8 @@ class Setting extends Model
         // Converter valor conforme o tipo antes de salvar
         if ($type === 'json' && is_array($value)) {
             $value = json_encode($value);
+        } elseif ($type === 'encrypted' && !empty($value)) {
+            $value = Crypt::encryptString($value);
         }
         
         return self::updateOrCreate(

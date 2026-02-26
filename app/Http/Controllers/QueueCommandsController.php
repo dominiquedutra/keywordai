@@ -51,8 +51,29 @@ class QueueCommandsController extends Controller
                         'default' => 'default'
                     ]
                 ]
+            ],
+            [
+                'id' => 'sync-all-stats',
+                'name' => 'Sincronizar Estatísticas de Todos os Termos Ativos',
+                'description' => 'Enfileira jobs para sincronizar estatísticas de todos os termos de pesquisa ativos (não excluídos)',
+                'command' => 'keywordai:sync-all-active-stats',
+                'options' => [
+                    [
+                        'name' => 'queue',
+                        'type' => 'text',
+                        'description' => 'Nome da fila',
+                        'required' => false,
+                        'default' => 'default'
+                    ],
+                    [
+                        'name' => 'dry-run',
+                        'type' => 'checkbox',
+                        'description' => 'Apenas mostrar quantos termos seriam sincronizados',
+                        'required' => false,
+                        'default' => false
+                    ]
+                ]
             ]
-            // Adicione mais comandos aqui conforme necessário
         ];
         
         return view('queue_commands.index', compact('queueStats', 'availableCommands'));
@@ -71,7 +92,8 @@ class QueueCommandsController extends Controller
         
         // Mapear o ID do comando para o comando real
         $commandMap = [
-            'sync-stats' => 'keywordai:queue-sync-stats'
+            'sync-stats' => 'keywordai:queue-sync-stats',
+            'sync-all-stats' => 'keywordai:sync-all-active-stats',
         ];
         
         if (!isset($commandMap[$commandId])) {
@@ -84,7 +106,10 @@ class QueueCommandsController extends Controller
         // Construir os argumentos do comando
         $commandArgs = [];
         foreach ($options as $key => $value) {
-            if (!empty($value)) {
+            if ($value === 'on' || $value === '1' || $value === true) {
+                // Checkbox/boolean flags: pass as true (no value)
+                $commandArgs["--{$key}"] = true;
+            } elseif (!empty($value) && $value !== '0') {
                 $commandArgs["--{$key}"] = $value;
             }
         }

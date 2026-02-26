@@ -169,12 +169,24 @@
                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                            @if ($option['required']) required @endif>
                                 @elseif ($option['type'] === 'text')
-                                    <input type="text" 
-                                           id="{{ $option['name'] }}" 
-                                           name="{{ $option['name'] }}" 
+                                    <input type="text"
+                                           id="{{ $option['name'] }}"
+                                           name="{{ $option['name'] }}"
                                            value="{{ $option['default'] ?? '' }}"
                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                            @if ($option['required']) required @endif>
+                                @elseif ($option['type'] === 'checkbox')
+                                    <div class="flex items-center mt-1">
+                                        <input type="checkbox"
+                                               id="{{ $option['name'] }}"
+                                               name="{{ $option['name'] }}"
+                                               value="1"
+                                               {{ !empty($option['default']) ? 'checked' : '' }}
+                                               class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
+                                        <label for="{{ $option['name'] }}" class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $option['description'] }}
+                                        </label>
+                                    </div>
                                 @endif
                             </div>
                         @endforeach

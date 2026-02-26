@@ -35,22 +35,39 @@ class GlobalSettingsController extends Controller
         $validated = $request->validate([
             'default_keyword_match_type' => ['required', 'string', 'in:exact,phrase,broad'],
             'default_negative_keyword_match_type' => ['required', 'string', 'in:exact,phrase,broad'],
+            'ai_default_model' => ['required', 'string', 'in:gemini,openai,perplexity'],
+            'ai_gemini_api_key' => ['nullable', 'string'],
+            'ai_gemini_model' => ['required', 'string', 'max:100'],
+            'ai_openai_api_key' => ['nullable', 'string'],
+            'ai_openai_model' => ['required', 'string', 'max:100'],
+            'ai_perplexity_api_key' => ['nullable', 'string'],
+            'ai_perplexity_model' => ['required', 'string', 'max:100'],
             'ai_global_custom_instructions' => ['nullable', 'string'],
             'ai_gemini_custom_instructions' => ['nullable', 'string'],
             'ai_openai_custom_instructions' => ['nullable', 'string'],
             'ai_perplexity_custom_instructions' => ['nullable', 'string'],
         ]);
-        
+
+        // API keys: only update if non-empty (keeps existing key when submitted empty)
+        $encryptedKeys = ['ai_gemini_api_key', 'ai_openai_api_key', 'ai_perplexity_api_key'];
+        $textFields = ['ai_global_custom_instructions', 'ai_gemini_custom_instructions', 'ai_openai_custom_instructions', 'ai_perplexity_custom_instructions'];
+
         foreach ($validated as $key => $value) {
-            // Determinar o tipo de configuração
+            if (in_array($key, $encryptedKeys)) {
+                if (!empty($value)) {
+                    Setting::setValue($key, $value, 'encrypted');
+                }
+                continue;
+            }
+
             $type = 'string';
-            if (in_array($key, ['ai_global_custom_instructions', 'ai_gemini_custom_instructions', 'ai_openai_custom_instructions', 'ai_perplexity_custom_instructions'])) {
+            if (in_array($key, $textFields)) {
                 $type = 'text';
             }
-            
+
             Setting::setValue($key, $value, $type);
         }
-        
+
         return redirect()->route('settings.global.index')
             ->with('success', 'Configurações atualizadas com sucesso!');
     }

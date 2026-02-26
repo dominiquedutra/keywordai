@@ -54,9 +54,9 @@ class HealthApiController extends BaseApiController
                 'configured' => !empty(config('app.google_ads_php_path')) && file_exists(config('app.google_ads_php_path')),
             ],
             'ai_providers' => [
-                'gemini' => !empty(config('app.ai_gemini_api_key')),
-                'openai' => !empty(config('app.ai_openai_api_key')),
-                'perplexity' => !empty(config('app.ai_perplexity_api_key')),
+                'gemini' => !empty(setting('ai_gemini_api_key')) || !empty(config('ai.models.gemini.api_key')),
+                'openai' => !empty(setting('ai_openai_api_key')) || !empty(config('ai.models.openai.api_key')),
+                'perplexity' => !empty(setting('ai_perplexity_api_key')) || !empty(config('ai.models.perplexity.api_key')),
             ],
             'rate_limits' => [
                 'google_ads_daily' => 14000,

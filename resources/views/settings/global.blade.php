@@ -63,22 +63,132 @@ use App\Models\Setting;
                 </div>
 
                 <div class="mb-4 mt-8 border-t pt-6">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Configurações de Inteligência Artificial</h2>
-                    
-                    <div class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-400 p-4 mb-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Configuração de IA — Chaves de API e Modelos</h2>
+
+                    <!-- Modelo Padrão -->
+                    <div class="mb-6">
+                        <label for="ai_default_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Modelo de IA Padrão
+                        </label>
+                        <select
+                            id="ai_default_model"
+                            name="ai_default_model"
+                            class="mt-1 block w-full md:w-1/3 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        >
+                            <option value="gemini" {{ Setting::getValue('ai_default_model', 'gemini') == 'gemini' ? 'selected' : '' }}>Gemini (Google)</option>
+                            <option value="openai" {{ Setting::getValue('ai_default_model', 'gemini') == 'openai' ? 'selected' : '' }}>OpenAI (GPT)</option>
+                            <option value="perplexity" {{ Setting::getValue('ai_default_model', 'gemini') == 'perplexity' ? 'selected' : '' }}>Perplexity</option>
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Modelo usado quando nenhum é especificado na análise.
+                        </p>
+                    </div>
+
+                    <!-- Gemini -->
+                    <div class="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">Google Gemini</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="ai_gemini_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Chave de API
+                                </label>
+                                <input type="password"
+                                       id="ai_gemini_api_key"
+                                       name="ai_gemini_api_key"
+                                       value=""
+                                       placeholder="{{ !empty(Setting::getValue('ai_gemini_api_key')) ? '••••••••••••••••' : 'Cole sua API key aqui' }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Deixe vazio para manter a chave atual.{{ !empty(config('ai.models.gemini.api_key')) ? ' Fallback: .env configurado.' : '' }}
+                                </p>
                             </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-blue-700 dark:text-blue-200">
-                                    As chaves de API e versões dos modelos de IA são configuradas no arquivo <code>.env</code>.
+                            <div>
+                                <label for="ai_gemini_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Modelo
+                                </label>
+                                <input type="text"
+                                       id="ai_gemini_model"
+                                       name="ai_gemini_model"
+                                       value="{{ Setting::getValue('ai_gemini_model', 'gemini-2.0-flash') }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Sugestões: <code>gemini-2.0-flash</code> (rápido), <code>gemini-2.5-flash-preview-04-17</code>, <code>gemini-2.5-pro</code>
                                 </p>
                             </div>
                         </div>
                     </div>
+
+                    <!-- OpenAI -->
+                    <div class="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">OpenAI</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="ai_openai_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Chave de API
+                                </label>
+                                <input type="password"
+                                       id="ai_openai_api_key"
+                                       name="ai_openai_api_key"
+                                       value=""
+                                       placeholder="{{ !empty(Setting::getValue('ai_openai_api_key')) ? '••••••••••••••••' : 'Cole sua API key aqui' }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Deixe vazio para manter a chave atual.{{ !empty(config('ai.models.openai.api_key')) ? ' Fallback: .env configurado.' : '' }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="ai_openai_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Modelo
+                                </label>
+                                <input type="text"
+                                       id="ai_openai_model"
+                                       name="ai_openai_model"
+                                       value="{{ Setting::getValue('ai_openai_model', 'gpt-4o-mini') }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Sugestões: <code>gpt-4o-mini</code> (mais barato), <code>gpt-4o</code> (equilibrado)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perplexity -->
+                    <div class="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">Perplexity</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="ai_perplexity_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Chave de API
+                                </label>
+                                <input type="password"
+                                       id="ai_perplexity_api_key"
+                                       name="ai_perplexity_api_key"
+                                       value=""
+                                       placeholder="{{ !empty(Setting::getValue('ai_perplexity_api_key')) ? '••••••••••••••••' : 'Cole sua API key aqui' }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Deixe vazio para manter a chave atual.{{ !empty(config('ai.models.perplexity.api_key')) ? ' Fallback: .env configurado.' : '' }}
+                                </p>
+                            </div>
+                            <div>
+                                <label for="ai_perplexity_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Modelo
+                                </label>
+                                <input type="text"
+                                       id="ai_perplexity_model"
+                                       name="ai_perplexity_model"
+                                       value="{{ Setting::getValue('ai_perplexity_model', 'sonar-pro') }}"
+                                       class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Sugestões: <code>sonar</code> (padrão), <code>sonar-pro</code> (avançado)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4 mt-8 border-t pt-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Instruções Customizadas de IA</h2>
 
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Instruções Globais Customizadas -->

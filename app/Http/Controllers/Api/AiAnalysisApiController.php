@@ -174,18 +174,18 @@ class AiAnalysisApiController extends BaseApiController
         $models = [
             'gemini' => [
                 'name' => 'Gemini (Google)',
-                'model' => config('app.ai_gemini_model', 'gemini-2.5-flash-preview-04-17'),
-                'available' => !empty(config('app.ai_gemini_api_key')),
+                'model' => setting('ai_gemini_model') ?: config('ai.models.gemini.model_name', 'gemini-2.0-flash'),
+                'available' => !empty(setting('ai_gemini_api_key')) || !empty(config('ai.models.gemini.api_key')),
             ],
             'openai' => [
                 'name' => 'OpenAI (GPT)',
-                'model' => config('app.ai_openai_model', 'gpt-4o'),
-                'available' => !empty(config('app.ai_openai_api_key')),
+                'model' => setting('ai_openai_model') ?: config('ai.models.openai.model_name', 'gpt-4o-mini'),
+                'available' => !empty(setting('ai_openai_api_key')) || !empty(config('ai.models.openai.api_key')),
             ],
             'perplexity' => [
                 'name' => 'Perplexity',
-                'model' => config('app.ai_perplexity_model', 'sonar-medium-online'),
-                'available' => !empty(config('app.ai_perplexity_api_key')),
+                'model' => setting('ai_perplexity_model') ?: config('ai.models.perplexity.model_name', 'sonar-pro'),
+                'available' => !empty(setting('ai_perplexity_api_key')) || !empty(config('ai.models.perplexity.api_key')),
             ],
         ];
 
