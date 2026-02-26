@@ -67,3 +67,24 @@
    - Direct proxy config without filesystem-dependent directives
 2. `$realpath_root` and `try_files` require the paths to exist on nginx's local filesystem.
 3. After editing bind-mounted configs, **restart the container** (not just `nginx -s reload`).
+
+## Production vs Staging vs Local: Know Your Environment
+
+**Date:** 2026-02-26
+**Impact:** Clarity on the three deployment environments and their differences.
+
+### Environment topology
+
+| Environment | Location | Database | Queue | PHP | Infra |
+|-------------|----------|----------|-------|-----|-------|
+| **Local** | macOS laptop | SQLite | `database` driver | 8.2 | Optional Docker dev compose |
+| **Staging** | Home server | Varies | `database` driver | 8.2 | Docker |
+| **Production** | DigitalOcean VPS | **PostgreSQL** | **Beanstalkd** | **8.3.6** | **Bare metal** (no Docker) |
+
+### Rules
+1. **Production is NOT Docker** — it runs Nginx + PHP-FPM + PostgreSQL + Beanstalkd + Supervisor directly on Ubuntu 24.04.
+2. **Database differs per environment** — local uses SQLite, production uses PostgreSQL. Test migrations against both if possible.
+3. **Queue driver differs** — local uses `database`, production uses `beanstalkd`. Jobs that work locally may behave differently in production.
+4. **PHP version differs** — local is 8.2, production is 8.3.6. Be aware of deprecation warnings or behavior changes.
+5. **Always deploy manually** — `ssh deployer@192.34.63.220`, git pull, build, migrate, restart supervisor. No CI/CD pipeline yet.
+6. **Check the scheduler** — production currently has NO cron for `php artisan schedule:run`. Scheduled tasks won't run until this is fixed.
