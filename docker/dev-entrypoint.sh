@@ -28,6 +28,9 @@ if [ ! -f /var/www/html/vendor/autoload.php ]; then
     echo "    Run: composer install --ignore-platform-reqs"
 fi
 
+# Override DB_DATABASE to container path (host .env may have macOS path)
+export DB_DATABASE=/var/www/html/database/database.sqlite
+
 # Ensure database file exists and is writable
 if [ ! -f /var/www/html/database/database.sqlite ]; then
     echo "📦 Creating SQLite database..."
