@@ -58,11 +58,7 @@ Route::middleware(['auth'])->group(function () {
     // Rota para dados do gráfico do dashboard
     Route::get('/api/dashboard/new-terms-chart', [DashboardController::class, 'getNewTermsChartData'])->name('api.dashboard.new-terms-chart');
 
-    // Rota para configurações globais
-    Route::get('/settings/global', [App\Http\Controllers\Settings\GlobalSettingsController::class, 'index'])->name('settings.global.index');
-    Route::post('/settings/global', [App\Http\Controllers\Settings\GlobalSettingsController::class, 'update'])->name('settings.global.update');
-    
-        // Rotas para fila e comandos
+    // Rotas para fila e comandos
     Route::get('/queue-commands', [App\Http\Controllers\QueueCommandsController::class, 'index'])->name('queue-commands.index');
     Route::post('/queue-commands/execute', [App\Http\Controllers\QueueCommandsController::class, 'executeCommand'])->name('queue-commands.execute');
     
