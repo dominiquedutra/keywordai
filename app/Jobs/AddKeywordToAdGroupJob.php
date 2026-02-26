@@ -5,14 +5,14 @@ namespace App\Jobs;
 use App\Models\ActivityLog;
 use App\Models\AdGroup;
 use App\Services\GoogleAdsQuotaService;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Common\KeywordInfo; // Correct namespace
-use Google\Ads\GoogleAds\V19\Enums\KeywordMatchTypeEnum\KeywordMatchType;
-use Google\Ads\GoogleAds\V19\Resources\AdGroupCriterion;
-// use Google\Ads\GoogleAds\V19\Resources\KeywordInfo; // Remove or comment out incorrect one if it existed
-use Google\Ads\GoogleAds\V19\Services\AdGroupCriterionOperation;
-use Google\Ads\GoogleAds\V19\Services\AdGroupCriterionServiceClient; // Add this missing use statement
-use Google\Ads\GoogleAds\V19\Services\MutateAdGroupCriteriaRequest;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Common\KeywordInfo; // Correct namespace
+use Google\Ads\GoogleAds\V20\Enums\KeywordMatchTypeEnum\KeywordMatchType;
+use Google\Ads\GoogleAds\V20\Resources\AdGroupCriterion;
+// use Google\Ads\GoogleAds\V20\Resources\KeywordInfo; // Remove or comment out incorrect one if it existed
+use Google\Ads\GoogleAds\V20\Services\AdGroupCriterionOperation;
+use Google\Ads\GoogleAds\V20\Services\AdGroupCriterionServiceClient; // Add this missing use statement
+use Google\Ads\GoogleAds\V20\Services\MutateAdGroupCriteriaRequest;
 use Google\ApiCore\ApiException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

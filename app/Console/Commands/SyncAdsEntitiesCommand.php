@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use App\Models\Campaign;
 use App\Models\AdGroup;
 use App\Services\GoogleAdsQuotaService;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Enums\AdGroupStatusEnum\AdGroupStatus;
-use Google\Ads\GoogleAds\V19\Enums\CampaignStatusEnum\CampaignStatus;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Enums\AdGroupStatusEnum\AdGroupStatus;
+use Google\Ads\GoogleAds\V20\Enums\CampaignStatusEnum\CampaignStatus;
 use Google\ApiCore\ApiException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -167,7 +167,7 @@ class SyncAdsEntitiesCommand extends Command
 
         // Executar a consulta
         $googleAdsServiceClient = $this->googleAdsClient->getGoogleAdsServiceClient();
-        $request = new \Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsStreamRequest([
+        $request = new \Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsStreamRequest([
             'customer_id' => $this->clientCustomerId,
             'query' => $query
         ]);
@@ -200,7 +200,7 @@ class SyncAdsEntitiesCommand extends Command
                 
                 // Obter o tipo de canal de publicidade
                 $advertisingChannelType = $campaign->getAdvertisingChannelType();
-                $advertisingChannelTypeName = $advertisingChannelType ? \Google\Ads\GoogleAds\V19\Enums\AdvertisingChannelTypeEnum\AdvertisingChannelType::name($advertisingChannelType) : null;
+                $advertisingChannelTypeName = $advertisingChannelType ? \Google\Ads\GoogleAds\V20\Enums\AdvertisingChannelTypeEnum\AdvertisingChannelType::name($advertisingChannelType) : null;
                 
                 $this->info("Tipo de canal de publicidade da campanha '{$campaign->getName()}': {$advertisingChannelTypeName}");
                 
@@ -263,7 +263,7 @@ class SyncAdsEntitiesCommand extends Command
 
         // Executar a consulta
         $googleAdsServiceClient = $this->googleAdsClient->getGoogleAdsServiceClient();
-        $request = new \Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsStreamRequest([
+        $request = new \Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsStreamRequest([
             'customer_id' => $this->clientCustomerId,
             'query' => $query
         ]);

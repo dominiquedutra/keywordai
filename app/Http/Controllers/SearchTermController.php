@@ -6,7 +6,7 @@ use App\Jobs\SyncSearchTermStatsJob;
 use App\Models\AdGroup;
 use App\Models\SearchTerm;
 use App\Services\GoogleAdsQuotaService;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

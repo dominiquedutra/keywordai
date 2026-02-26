@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Enums\KeywordMatchTypeEnum\KeywordMatchType;
-use Google\Ads\GoogleAds\V19\Resources\SharedCriterion;
-use Google\Ads\GoogleAds\V19\Common\KeywordInfo;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Enums\KeywordMatchTypeEnum\KeywordMatchType;
+use Google\Ads\GoogleAds\V20\Resources\SharedCriterion;
+use Google\Ads\GoogleAds\V20\Common\KeywordInfo;
 use Google\ApiCore\ApiException; // Manter para possível validação futura, embora a lógica principal vá para o Job
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log; // Manter para logs do próprio comando, se necessário
@@ -33,7 +33,7 @@ class GoogleAdsAddNegativeKeywordCommand extends Command
     /**
      * The Google Ads API client.
      *
-     * @var \Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient
+     * @var \Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient
      */
     private $googleAdsClient;
 

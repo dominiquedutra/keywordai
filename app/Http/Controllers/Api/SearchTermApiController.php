@@ -99,7 +99,7 @@ class SearchTermApiController extends BaseApiController
     {
         try {
             $job = new SyncSearchTermStatsJob($searchTerm);
-            $googleAdsClient = app(\Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient::class);
+            $googleAdsClient = app(\Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient::class);
             $quotaService = app(\App\Services\GoogleAdsQuotaService::class);
             
             $updatedSearchTerm = $job->handleSynchronous($googleAdsClient, $quotaService);

@@ -11,7 +11,7 @@
     "require": {
         "php": "^8.2",
         "google/auth": "^1.46",
-        "googleads/google-ads-php": "^26.1",
+        "googleads/google-ads-php": "^32.0",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",

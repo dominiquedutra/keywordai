@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Services\GoogleAdsQuotaService;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Services\GoogleAdsRow;
-use Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsRequest;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Services\GoogleAdsRow;
+use Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsRequest;
 use Google\ApiCore\ApiException;
 use Google\ApiCore\ApiStatus;
 use Illuminate\Console\Command;
@@ -30,7 +30,7 @@ class FetchCampaignsCommand extends Command
     /**
      * The Google Ads API client.
      *
-     * @var \Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient
+     * @var \Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient
      */
     private $googleAdsClient;
     

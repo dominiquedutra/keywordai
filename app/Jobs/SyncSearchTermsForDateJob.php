@@ -8,11 +8,11 @@ use App\Models\SearchTermSyncDate;
 use App\Services\GoogleAdsQuotaService;
 use Carbon\Carbon;
 use DateTimeInterface;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Enums\SearchTermTargetingStatusEnum\SearchTermTargetingStatus;
-use Google\Ads\GoogleAds\V19\Enums\KeywordMatchTypeEnum\KeywordMatchType;
-use Google\Ads\GoogleAds\V19\Services\GoogleAdsRow;
-use Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsStreamRequest;
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Enums\SearchTermTargetingStatusEnum\SearchTermTargetingStatus;
+use Google\Ads\GoogleAds\V20\Enums\KeywordMatchTypeEnum\KeywordMatchType;
+use Google\Ads\GoogleAds\V20\Services\GoogleAdsRow;
+use Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsStreamRequest;
 use Google\ApiCore\ApiException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -61,7 +61,7 @@ class SyncSearchTermsForDateJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @param \Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient $googleAdsClient
+     * @param \Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient $googleAdsClient
      * @param \App\Services\GoogleAdsQuotaService $quotaService
      * @return void
      */

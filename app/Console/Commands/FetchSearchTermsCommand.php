@@ -4,12 +4,12 @@ namespace App\Console\Commands;
 
 use App\Models\SearchTerm;
 use App\Services\GoogleAdsQuotaService;
-use Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient;
-use Google\Ads\GoogleAds\V19\Enums\SearchTermTargetingStatusEnum\SearchTermTargetingStatus;
-use Google\Ads\GoogleAds\V19\Enums\KeywordMatchTypeEnum\KeywordMatchType;
-use Google\Ads\GoogleAds\V19\Services\GoogleAdsRow;
-use Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsRequest; // Mantido, mas usaremos searchStream
-use Google\Ads\GoogleAds\V19\Services\SearchGoogleAdsStreamRequest; // Usaremos este
+use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
+use Google\Ads\GoogleAds\V20\Enums\SearchTermTargetingStatusEnum\SearchTermTargetingStatus;
+use Google\Ads\GoogleAds\V20\Enums\KeywordMatchTypeEnum\KeywordMatchType;
+use Google\Ads\GoogleAds\V20\Services\GoogleAdsRow;
+use Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsRequest; // Mantido, mas usaremos searchStream
+use Google\Ads\GoogleAds\V20\Services\SearchGoogleAdsStreamRequest; // Usaremos este
 use Google\ApiCore\ApiException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -37,7 +37,7 @@ class FetchSearchTermsCommand extends Command
     /**
      * The Google Ads API client.
      *
-     * @var \Google\Ads\GoogleAds\Lib\V19\GoogleAdsClient
+     * @var \Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient
      */
     private $googleAdsClient;
     
