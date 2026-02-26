@@ -77,7 +77,7 @@ use App\Models\Setting;
                         >
                             <option value="gemini" {{ Setting::getValue('ai_default_model', 'gemini') == 'gemini' ? 'selected' : '' }}>Gemini (Google)</option>
                             <option value="openai" {{ Setting::getValue('ai_default_model', 'gemini') == 'openai' ? 'selected' : '' }}>OpenAI (GPT)</option>
-                            <option value="perplexity" {{ Setting::getValue('ai_default_model', 'gemini') == 'perplexity' ? 'selected' : '' }}>Perplexity</option>
+                            <option value="openrouter" {{ Setting::getValue('ai_default_model', 'gemini') == 'openrouter' ? 'selected' : '' }}>OpenRouter</option>
                         </select>
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             Modelo usado quando nenhum é especificado na análise.
@@ -152,35 +152,35 @@ use App\Models\Setting;
                         </div>
                     </div>
 
-                    <!-- Perplexity -->
+                    <!-- OpenRouter -->
                     <div class="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">Perplexity</h3>
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">OpenRouter</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="ai_perplexity_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label for="ai_openrouter_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Chave de API
                                 </label>
                                 <input type="password"
-                                       id="ai_perplexity_api_key"
-                                       name="ai_perplexity_api_key"
+                                       id="ai_openrouter_api_key"
+                                       name="ai_openrouter_api_key"
                                        value=""
-                                       placeholder="{{ !empty(Setting::getValue('ai_perplexity_api_key')) ? '••••••••••••••••' : 'Cole sua API key aqui' }}"
+                                       placeholder="{{ !empty(Setting::getValue('ai_openrouter_api_key')) ? '••••••••••••••••' : 'Cole sua API key aqui' }}"
                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    Deixe vazio para manter a chave atual.{{ !empty(config('ai.models.perplexity.api_key')) ? ' Fallback: .env configurado.' : '' }}
+                                    Deixe vazio para manter a chave atual.{{ !empty(config('ai.models.openrouter.api_key')) ? ' Fallback: .env configurado.' : '' }}
                                 </p>
                             </div>
                             <div>
-                                <label for="ai_perplexity_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label for="ai_openrouter_model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Modelo
                                 </label>
                                 <input type="text"
-                                       id="ai_perplexity_model"
-                                       name="ai_perplexity_model"
-                                       value="{{ Setting::getValue('ai_perplexity_model', 'sonar-pro') }}"
+                                       id="ai_openrouter_model"
+                                       name="ai_openrouter_model"
+                                       value="{{ Setting::getValue('ai_openrouter_model', 'google/gemini-2.0-flash-001') }}"
                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    Sugestões: <code>sonar</code> (padrão), <code>sonar-pro</code> (avançado)
+                                    Sugestões: <code>google/gemini-2.0-flash-001</code>, <code>anthropic/claude-sonnet-4</code>, <code>meta-llama/llama-4-maverick</code>, <code>mistralai/mistral-small-3.1-24b-instruct</code>
                                 </p>
                             </div>
                         </div>
@@ -239,19 +239,19 @@ use App\Models\Setting;
                             </p>
                         </div>
 
-                        <!-- Instruções Customizadas para Perplexity -->
+                        <!-- Instruções Customizadas para OpenRouter -->
                         <div>
-                            <label for="ai_perplexity_custom_instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Instruções Customizadas para Perplexity
+                            <label for="ai_openrouter_custom_instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Instruções Customizadas para OpenRouter
                             </label>
                             <textarea
-                                id="ai_perplexity_custom_instructions"
-                                name="ai_perplexity_custom_instructions"
+                                id="ai_openrouter_custom_instructions"
+                                name="ai_openrouter_custom_instructions"
                                 rows="4"
                                 class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            >{{ Setting::getValue('ai_perplexity_custom_instructions') }}</textarea>
+                            >{{ Setting::getValue('ai_openrouter_custom_instructions') }}</textarea>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                Instruções customizadas específicas para o modelo Perplexity.
+                                Instruções customizadas específicas para o modelo OpenRouter.
                             </p>
                         </div>
                     </div>

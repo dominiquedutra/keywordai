@@ -37,7 +37,7 @@ class AiAnalysisApiController extends BaseApiController
             'min_impressions' => 'nullable|integer|min:0',
             'min_clicks' => 'nullable|integer|min:0',
             'min_cost' => 'nullable|numeric|min:0',
-            'model' => 'required|in:gemini,openai,perplexity',
+            'model' => 'required|in:gemini,openai,openrouter',
             'limit' => 'nullable|integer|min:1|max:200',
             'filters' => 'nullable|array',
         ]);
@@ -79,7 +79,7 @@ class AiAnalysisApiController extends BaseApiController
     public function suggestNegatives(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'model' => 'required|in:gemini,openai,perplexity',
+            'model' => 'required|in:gemini,openai,openrouter',
             'date_from' => 'nullable|date_format:Y-m-d',
             'date_to' => 'nullable|date_format:Y-m-d',
             'min_impressions' => 'nullable|integer|min:0',
@@ -182,10 +182,10 @@ class AiAnalysisApiController extends BaseApiController
                 'model' => setting('ai_openai_model') ?: config('ai.models.openai.model_name', 'gpt-4o-mini'),
                 'available' => !empty(setting('ai_openai_api_key')) || !empty(config('ai.models.openai.api_key')),
             ],
-            'perplexity' => [
-                'name' => 'Perplexity',
-                'model' => setting('ai_perplexity_model') ?: config('ai.models.perplexity.model_name', 'sonar-pro'),
-                'available' => !empty(setting('ai_perplexity_api_key')) || !empty(config('ai.models.perplexity.api_key')),
+            'openrouter' => [
+                'name' => 'OpenRouter',
+                'model' => setting('ai_openrouter_model') ?: config('ai.models.openrouter.model_name', 'google/gemini-2.0-flash-001'),
+                'available' => !empty(setting('ai_openrouter_api_key')) || !empty(config('ai.models.openrouter.api_key')),
             ],
         ];
 

@@ -20,7 +20,7 @@ KeywordAI is an open-source platform that helps digital marketers and PPC specia
 - **Smart Categorization** - Automatically identify added/excluded terms
 
 ### 🤖 AI-Powered Analysis
-- **Multiple AI Providers** - Support for Google Gemini, OpenAI GPT, and Perplexity
+- **Multiple AI Providers** - Support for Google Gemini, OpenAI GPT, and OpenRouter
 - **Intelligent Suggestions** - AI analyzes terms and suggests which to negate
 - **Batch Operations** - Process hundreds of terms with AI in minutes
 - **Rationale Explanations** - Understand why terms should be negated
@@ -192,7 +192,7 @@ curl -X POST -H "X-API-Token: your_token" \
 │  • Database (SQLite/MySQL)    • AI Service Integrations      │
 ├─────────────────────────────────────────────────────────────┤
 │                    External Services                         │
-│  Google Ads API    │   Gemini   │   OpenAI   │   Perplexity  │
+│  Google Ads API    │   Gemini   │   OpenAI   │   OpenRouter  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -202,7 +202,7 @@ curl -X POST -H "X-API-Token: your_token" \
 - **Frontend**: Blade, Tailwind CSS, Alpine.js
 - **Database**: SQLite (default), MySQL/PostgreSQL supported
 - **Queue**: Redis, Database
-- **AI APIs**: Google Gemini, OpenAI GPT, Perplexity
+- **AI APIs**: Google Gemini, OpenAI GPT, OpenRouter
 - **Container**: Docker, Docker Compose
 
 ## 🤝 Contributing

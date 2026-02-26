@@ -25,7 +25,7 @@
 *   **Integrações de IA (Planejadas):**
     *   **Gemini API:** API do Google para acesso aos modelos de IA Gemini. Requer chave de API armazenada nas configurações.
     *   **OpenAI API:** API para acesso aos modelos GPT da OpenAI. Requer chave de API armazenada nas configurações.
-    *   **Perplexity API:** API para acesso aos modelos de IA da Perplexity. Requer chave de API armazenada nas configurações.
+    *   **OpenRouter API:** API para acesso aos modelos de IA da OpenRouter. Requer chave de API armazenada nas configurações.
 
 ## 4. Development Setup (Based on `projectbrief.md` Section 11)
 
@@ -58,7 +58,7 @@
 *   **Background Processing:** Requires a running queue worker process and proper configuration of the queue driver. Failures in jobs need monitoring and potentially retry mechanisms.
 *   **PHP/Laravel Version:** Stick to versions compatible with `googleads/google-ads-php`.
 *   **Integrações de IA:**
-    *   As chaves de API para serviços de IA (Gemini, OpenAI, Perplexity) são armazenadas na tabela `settings` do banco de dados.
+    *   As chaves de API para serviços de IA (Gemini, OpenAI, OpenRouter) são armazenadas na tabela `settings` do banco de dados.
     *   Instruções customizadas para modelos de IA também são armazenadas na tabela `settings`.
     *   A interface para gerenciar essas configurações está disponível em `/settings/global`.
     *   Futuras integrações de IA para análise de termos de pesquisa utilizarão essas configurações.

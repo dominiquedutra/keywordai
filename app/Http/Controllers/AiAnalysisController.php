@@ -40,7 +40,7 @@ class AiAnalysisController extends Controller
         $aiModels = [
             'gemini' => 'Gemini (Google)',
             'openai' => 'OpenAI (GPT)',
-            'perplexity' => 'Perplexity'
+            'openrouter' => 'OpenRouter'
         ];
 
         // Obter o modelo padrão
@@ -71,7 +71,7 @@ class AiAnalysisController extends Controller
             'min_impressions' => 'nullable|integer|min:0',
             'min_clicks' => 'nullable|integer|min:0',
             'min_cost' => 'nullable|numeric|min:0',
-            'model' => 'required|in:gemini,openai,perplexity',
+            'model' => 'required|in:gemini,openai,openrouter',
             'limit' => 'required|integer|min:1|max:100',
         ]);
 

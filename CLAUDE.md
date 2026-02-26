@@ -14,7 +14,7 @@ This repo previously had a key leak on a public GitHub repo, forcing a full repo
 
 ## Project Overview
 
-KeywordAI is an AI-powered Google Ads Search Term Management Platform. It syncs search terms from Google Ads, lets users analyze them with AI (Gemini, OpenAI, Perplexity), and manage negative keywords — all self-hosted with SQLite.
+KeywordAI is an AI-powered Google Ads Search Term Management Platform. It syncs search terms from Google Ads, lets users analyze them with AI (Gemini, OpenAI, OpenRouter), and manage negative keywords — all self-hosted with SQLite.
 
 ## Development Commands
 

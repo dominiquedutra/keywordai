@@ -8,7 +8,7 @@ return [
     |
     | This value determines which AI model will be used by default when no
     | specific model is requested. The available options are 'gemini',
-    | 'openai', and 'perplexity'.
+    | 'openai', and 'openrouter'.
     |
     */
     'default_model' => env('AI_DEFAULT_MODEL', 'gemini'),
@@ -33,10 +33,10 @@ return [
             'model_name' => env('AI_OPENAI_MODEL', 'gpt-4o'),
             'endpoint' => 'https://api.openai.com/v1/chat/completions',
         ],
-        'perplexity' => [
-            'api_key' => env('AI_PERPLEXITY_API_KEY'),
-            'model_name' => env('AI_PERPLEXITY_MODEL', 'sonar-medium-online'),
-            'endpoint' => 'https://api.perplexity.ai/chat/completions',
+        'openrouter' => [
+            'api_key' => env('AI_OPENROUTER_API_KEY'),
+            'model_name' => env('AI_OPENROUTER_MODEL', 'google/gemini-2.0-flash-001'),
+            'endpoint' => 'https://openrouter.ai/api/v1/chat/completions',
         ],
     ],
 

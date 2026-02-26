@@ -18,7 +18,7 @@ class AnalyzeSearchTermsCommand extends Command
                             {--min-impressions=0 : Filtrar termos com impressões >= a este valor (Opcional)}
                             {--min-clicks=0 : Filtrar termos com cliques >= a este valor (Opcional)}
                             {--min-cost=0 : Filtrar termos com custo >= a este valor (em R$) (Opcional)}
-                            {--model=gemini : O modelo de IA a ser usado (gemini, openai, perplexity) (Opcional)}
+                            {--model=gemini : O modelo de IA a ser usado (gemini, openai, openrouter) (Opcional)}
                             {--limit=50 : Limitar o número de termos enviados para análise (Opcional)}
                             {--show-prompt : Exibir o prompt gerado antes de enviar à IA (Opcional)}';
 

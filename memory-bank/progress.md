@@ -51,14 +51,14 @@
     *   Adicionado link para a nova tela no menu de navegação principal.
     *   Implementada interface que permite ao usuário escolher entre análise por data específica ou top termos por custo.
     *   Implementados filtros para impressões, cliques e custo mínimos.
-    *   Implementada seleção do modelo de IA a ser utilizado (Gemini, OpenAI, Perplexity).
+    *   Implementada seleção do modelo de IA a ser utilizado (Gemini, OpenAI, OpenRouter).
     *   Implementada exibição de métricas da API (modelo utilizado, tempo de resposta, quantidade de termos analisados).
     *   Implementada tabela de resultados com destaque para termos recomendados para negativação.
     *   Implementada funcionalidade para selecionar termos (todos, recomendados ou individualmente) e negativá-los em lote.
     *   Implementada seleção do tipo de correspondência (exata, frase, ampla) para negativação em lote.
     *   Implementada lógica para coletar termos de pesquisa com base em diferentes critérios (data específica ou maior custo), aplicar filtros de impressões, cliques e custo, e limitar a quantidade de termos analisados.
     *   Implementada lógica para coletar palavras-chave negativas existentes e seus motivos, bem como palavras-chave positivas, para fornecer contexto à IA.
-    *   Implementada integração com três APIs de IA: Gemini, OpenAI e Perplexity, permitindo ao usuário escolher qual modelo usar.
+    *   Implementada integração com três APIs de IA: Gemini, OpenAI e OpenRouter, permitindo ao usuário escolher qual modelo usar.
     *   Implementada lógica para construir um prompt detalhado para a IA, incluindo instruções customizadas das configurações globais.
     *   Implementada opção `--show-prompt` para exibir o prompt gerado antes de enviar à IA, permitindo ao usuário revisar e confirmar.
     *   Implementada lógica para processar a resposta da IA e exibir os resultados em uma tabela ordenada por recomendação de negativação.
@@ -78,9 +78,9 @@
 
 *   **Configurações de Inteligência Artificial:**
     *   Implementada uma nova seção "Configurações de Inteligência Artificial" na página de configurações globais (`/settings/global`).
-    *   Adicionados campos para armazenar chaves de API para Gemini, OpenAI e Perplexity.
+    *   Adicionados campos para armazenar chaves de API para Gemini, OpenAI e OpenRouter.
     *   Adicionado campo de texto grande para "Instruções Globais Customizadas" que serão aplicadas a todos os modelos de IA.
-    *   Adicionados campos de texto menores para instruções específicas para cada modelo (Gemini, OpenAI, Perplexity).
+    *   Adicionados campos de texto menores para instruções específicas para cada modelo (Gemini, OpenAI, OpenRouter).
     *   Atualizado o controlador `GlobalSettingsController` para validar e salvar as novas configurações.
     *   Atualizado o seeder `SettingsSeeder` para incluir valores padrão vazios para as novas configurações.
     *   Estas configurações serão utilizadas em futuras integrações de IA para análise de termos de pesquisa.

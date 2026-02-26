@@ -12,7 +12,7 @@
 
 *   **Interface Web para Fila e Comandos:** Implementada uma interface web em `/queue-commands` que permite visualizar estatísticas da fila e executar comandos diretamente pelo navegador. A interface mostra informações detalhadas sobre jobs na fila (prontos, reservados, adiados, enterrados) e permite executar o comando de sincronização de estatísticas com parâmetros personalizados. Adicionado link para esta página no Dashboard para facilitar o acesso.
 
-*   **Análise de Termos de Pesquisa com IA:** Implementado um novo comando Artisan que utiliza modelos de IA (Gemini, OpenAI, Perplexity) para analisar termos de pesquisa com status NONE e identificar candidatos à negativação, com base no contexto de palavras-chave negativas existentes e seus motivos. Criada também uma interface web dedicada para análise de termos com IA, permitindo ao usuário escolher entre análise por data específica ou top termos por custo, e negativar os termos recomendados diretamente pela interface.
+*   **Análise de Termos de Pesquisa com IA:** Implementado um novo comando Artisan que utiliza modelos de IA (Gemini, OpenAI, OpenRouter) para analisar termos de pesquisa com status NONE e identificar candidatos à negativação, com base no contexto de palavras-chave negativas existentes e seus motivos. Criada também uma interface web dedicada para análise de termos com IA, permitindo ao usuário escolher entre análise por data específica ou top termos por custo, e negativar os termos recomendados diretamente pela interface.
 *   **Filtros Adicionais para Termos de Pesquisa:** Implementados novos filtros na página `/search-terms` para permitir a filtragem por quantidade de impressões, cliques e custo superiores a valores específicos, facilitando a identificação de termos com real impacto nas campanhas.
 *   **Configurações de Inteligência Artificial:** Implementada uma seção dedicada nas configurações globais para gerenciar integrações com serviços de IA, incluindo armazenamento seguro de chaves de API e instruções customizadas para diferentes modelos.
 *   **Gráfico de Novos Termos no Dashboard:** Implementado um gráfico de barras na seção "Visão Geral" do Dashboard que mostra a quantidade de novos termos de pesquisa por dia, com base na data em que foram vistos pela primeira vez (`first_seen_at`). O gráfico permite navegação mês a mês e exibe os termos coloridos por status (NONE, EXCLUDED, ADDED, ADDED_EXCLUDED).
@@ -56,7 +56,7 @@
     *   Criado serviço `AiAnalysisService` para centralizar a lógica de análise de termos de pesquisa com IA, evitando duplicação de código entre os comandos.
     *   Implementada lógica para coletar termos de pesquisa com base em diferentes critérios (data específica ou maior custo), aplicar filtros de impressões, cliques e custo, e limitar a quantidade de termos analisados.
     *   Implementada lógica para coletar palavras-chave negativas existentes e seus motivos, bem como palavras-chave positivas, para fornecer contexto à IA.
-    *   Implementada integração com três APIs de IA: Gemini, OpenAI e Perplexity, permitindo ao usuário escolher qual modelo usar.
+    *   Implementada integração com três APIs de IA: Gemini, OpenAI e OpenRouter, permitindo ao usuário escolher qual modelo usar.
     *   Implementada lógica para construir um prompt detalhado para a IA, incluindo instruções customizadas das configurações globais.
     *   Implementada opção `--show-prompt` para exibir o prompt gerado antes de enviar à IA, permitindo ao usuário revisar e confirmar.
     *   Implementada lógica para processar a resposta da IA e exibir os resultados em uma tabela ordenada por recomendação de negativação.
@@ -85,9 +85,9 @@
 
 *   **Implementação de Configurações de Inteligência Artificial:**
     *   Adicionada uma nova seção "Configurações de Inteligência Artificial" na página de configurações globais (`/settings/global`).
-    *   Implementados campos para armazenar chaves de API para Gemini, OpenAI e Perplexity.
+    *   Implementados campos para armazenar chaves de API para Gemini, OpenAI e OpenRouter.
     *   Implementado campo de texto grande para "Instruções Globais Customizadas" que serão aplicadas a todos os modelos de IA.
-    *   Implementados campos de texto menores para instruções específicas para cada modelo (Gemini, OpenAI, Perplexity).
+    *   Implementados campos de texto menores para instruções específicas para cada modelo (Gemini, OpenAI, OpenRouter).
     *   Atualizado o controlador `GlobalSettingsController` para validar e salvar as novas configurações.
     *   Atualizado o seeder `SettingsSeeder` para incluir valores padrão vazios para as novas configurações.
     *   Estas configurações serão utilizadas em futuras integrações de IA para análise de termos de pesquisa.

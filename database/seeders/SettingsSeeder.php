@@ -50,10 +50,10 @@ class SettingsSeeder extends Seeder
         );
         
         Setting::setValue(
-            'ai_perplexity_custom_instructions', 
-            '', 
+            'ai_openrouter_custom_instructions',
+            '',
             'text',
-            'Instruções customizadas específicas para o modelo Perplexity'
+            'Instruções customizadas específicas para o modelo OpenRouter'
         );
     }
 }

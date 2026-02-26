@@ -43,7 +43,7 @@ KeywordAI is a Google Ads search term management platform that:
 ├─────────────────────────────────────────────────────────────┤
 │  External APIs:                                             │
 │  - Google Ads API (requires credentials)                    │
-│  - Optional AI: Gemini, OpenAI, Perplexity                  │
+│  - Optional AI: Gemini, OpenAI, OpenRouter                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 

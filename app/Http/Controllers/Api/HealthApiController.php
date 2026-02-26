@@ -56,7 +56,7 @@ class HealthApiController extends BaseApiController
             'ai_providers' => [
                 'gemini' => !empty(setting('ai_gemini_api_key')) || !empty(config('ai.models.gemini.api_key')),
                 'openai' => !empty(setting('ai_openai_api_key')) || !empty(config('ai.models.openai.api_key')),
-                'perplexity' => !empty(setting('ai_perplexity_api_key')) || !empty(config('ai.models.perplexity.api_key')),
+                'openrouter' => !empty(setting('ai_openrouter_api_key')) || !empty(config('ai.models.openrouter.api_key')),
             ],
             'rate_limits' => [
                 'google_ads_daily' => 14000,

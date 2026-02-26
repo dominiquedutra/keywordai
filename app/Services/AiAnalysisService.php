@@ -14,7 +14,7 @@ class AiAnalysisService
     /**
      * Analisa termos de pesquisa com IA.
      *
-     * @param string $model Nome do modelo de IA (gemini, openai, perplexity)
+     * @param string $model Nome do modelo de IA (gemini, openai, openrouter)
      * @param int $limit Limite de termos a serem analisados
      * @param array $filters Filtros adicionais (min_impressions, min_clicks, min_cost)
      * @param Carbon|null $date Data específica para análise (null para análise por custo)
@@ -23,7 +23,7 @@ class AiAnalysisService
     public function analyze(string $model, int $limit = 50, array $filters = [], ?Carbon $date = null): array
     {
         // Validar o modelo
-        $validModels = ['gemini', 'openai', 'perplexity'];
+        $validModels = ['gemini', 'openai', 'openrouter'];
         if (!in_array($model, $validModels)) {
             throw new \InvalidArgumentException("Modelo inválido: '{$model}'. Use um dos seguintes: " . implode(', ', $validModels));
         }
@@ -292,8 +292,8 @@ class AiAnalysisService
                 return $this->callGeminiApi($apiKey, $prompt);
             case 'openai':
                 return $this->callOpenAiApi($apiKey, $prompt);
-            case 'perplexity':
-                return $this->callPerplexityApi($apiKey, $prompt);
+            case 'openrouter':
+                return $this->callOpenRouterApi($apiKey, $prompt);
             default:
                 throw new \Exception("Modelo não suportado: {$model}");
         }
@@ -440,22 +440,22 @@ class AiAnalysisService
     }
 
     /**
-     * Chama a API Perplexity.
+     * Chama a API OpenRouter.
      *
      * @param string $apiKey Chave da API
      * @param string $prompt Prompt para a IA
      * @return array Resposta processada
      * @throws \Exception
      */
-    private function callPerplexityApi(string $apiKey, string $prompt): array
+    private function callOpenRouterApi(string $apiKey, string $prompt): array
     {
-        $url = 'https://api.perplexity.ai/chat/completions';
-        
+        $url = 'https://openrouter.ai/api/v1/chat/completions';
+
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
         ])->post($url, [
-            'model' => setting('ai_perplexity_model') ?: config('ai.models.perplexity.model_name', 'sonar-pro'),
+            'model' => setting('ai_openrouter_model') ?: config('ai.models.openrouter.model_name', 'google/gemini-2.0-flash-001'),
             'messages' => [
                 [
                     'role' => 'system',
@@ -468,23 +468,23 @@ class AiAnalysisService
             ],
             'temperature' => 0.2,
         ]);
-        
+
         if ($response->failed()) {
-            throw new \Exception("Falha na chamada à API Perplexity: " . $response->body());
+            throw new \Exception("Falha na chamada à API OpenRouter: " . $response->body());
         }
-        
+
         $data = $response->json();
-        
+
         // Extrair o texto da resposta
         if (!isset($data['choices'][0]['message']['content'])) {
-            throw new \Exception("Formato de resposta da API Perplexity inesperado: " . json_encode($data));
+            throw new \Exception("Formato de resposta da API OpenRouter inesperado: " . json_encode($data));
         }
-        
+
         $responseText = $data['choices'][0]['message']['content'];
-        
+
         // Extrair o JSON da resposta (pode estar dentro de blocos de código)
         preg_match('/```json\s*(.*?)\s*```/s', $responseText, $matches);
-        
+
         if (isset($matches[1])) {
             $jsonText = $matches[1];
         } else {
@@ -496,14 +496,14 @@ class AiAnalysisService
                 $jsonText = $responseText; // Usar o texto completo como fallback
             }
         }
-        
+
         // Decodificar o JSON
         $result = json_decode($jsonText, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
-        
+
         return $result;
     }
 
