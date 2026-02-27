@@ -172,6 +172,15 @@
                                 </svg>
                             </span>
                         </button>
+                        <button id="fast-negate-button" class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 active:bg-amber-800 focus:outline-none focus:border-amber-800 focus:ring ring-amber-300 disabled:opacity-25 transition ease-in-out duration-150" disabled>
+                            <span id="fast-negate-text">Negativar Rápido</span>
+                            <span id="fast-negate-loading" class="hidden ml-2">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -270,6 +279,9 @@
             const negateLoading = document.getElementById('negate-loading');
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
             const matchTypeSelect = document.getElementById('match_type');
+            const fastNegateButton = document.getElementById('fast-negate-button');
+            const fastNegateText = document.getElementById('fast-negate-text');
+            const fastNegateLoading = document.getElementById('fast-negate-loading');
 
             analysisTypeRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
@@ -523,9 +535,71 @@
                 }
             });
 
+            fastNegateButton.addEventListener('click', async function() {
+                const selectedCheckboxes = document.querySelectorAll('.term-checkbox:checked');
+
+                if (selectedCheckboxes.length === 0) {
+                    return;
+                }
+
+                fastNegateButton.disabled = true;
+                fastNegateText.classList.add('hidden');
+                fastNegateLoading.classList.remove('hidden');
+
+                const terms = [];
+                selectedCheckboxes.forEach(checkbox => {
+                    terms.push({
+                        id: checkbox.getAttribute('data-term-id'),
+                        rationale: null
+                    });
+                });
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                try {
+                    const response = await fetch('{{ route("ai-analysis.negate") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            terms: terms,
+                            match_type: '{{ $defaultMatchType }}'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showNotification(data.message || 'Termos negativados com sucesso!');
+
+                        selectedCheckboxes.forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+
+                        selectAllCheckbox.checked = false;
+                        updateNegateButtonState();
+                    } else {
+                        showNotification(data.message || 'Erro ao negativar os termos selecionados.', true);
+                    }
+                } catch (error) {
+                    console.error('Erro ao negativar termos (rápido):', error);
+                    showNotification('Erro ao negativar os termos selecionados. Por favor, tente novamente.', true);
+                } finally {
+                    fastNegateButton.disabled = false;
+                    fastNegateText.classList.remove('hidden');
+                    fastNegateLoading.classList.add('hidden');
+                }
+            });
+
             function updateNegateButtonState() {
                 const selectedCheckboxes = document.querySelectorAll('.term-checkbox:checked');
-                negateSelectedButton.disabled = selectedCheckboxes.length === 0;
+                const hasSelection = selectedCheckboxes.length === 0;
+                negateSelectedButton.disabled = hasSelection;
+                fastNegateButton.disabled = hasSelection;
             }
 
             function showNotification(message, isError = false) {
