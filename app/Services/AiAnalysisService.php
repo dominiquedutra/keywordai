@@ -316,7 +316,7 @@ class AiAnalysisService
         
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-        ])->timeout(120)->withQueryParameters([
+        ])->timeout((int) setting('ai_api_timeout', 120))->withQueryParameters([
             'key' => $apiKey,
         ])->post($url, [
             'contents' => [
@@ -401,7 +401,7 @@ class AiAnalysisService
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->timeout(120)->post($url, [
+        ])->timeout((int) setting('ai_api_timeout', 120))->post($url, [
             'model' => setting('ai_openai_model') ?: config('ai.models.openai.model_name', 'gpt-4o-mini'),
             'messages' => [
                 [
@@ -482,7 +482,7 @@ class AiAnalysisService
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->timeout(120)->post($url, [
+        ])->timeout((int) setting('ai_api_timeout', 120))->post($url, [
             'model' => setting('ai_openrouter_model') ?: config('ai.models.openrouter.model_name', 'google/gemini-2.0-flash-001'),
             'messages' => [
                 [

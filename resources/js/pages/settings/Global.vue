@@ -25,6 +25,7 @@ interface Settings {
     ai_gemini_custom_instructions: string;
     ai_openai_custom_instructions: string;
     ai_openrouter_custom_instructions: string;
+    ai_api_timeout: string;
     has_gemini_key: boolean;
     has_openai_key: boolean;
     has_openrouter_key: boolean;
@@ -55,6 +56,7 @@ const form = useForm({
     ai_gemini_custom_instructions: props.settings.ai_gemini_custom_instructions,
     ai_openai_custom_instructions: props.settings.ai_openai_custom_instructions,
     ai_openrouter_custom_instructions: props.settings.ai_openrouter_custom_instructions,
+    ai_api_timeout: props.settings.ai_api_timeout,
 });
 
 const submit = () => {
@@ -190,6 +192,13 @@ async function fetchOpenRouterModels() {
                         </Select>
                         <p class="text-sm text-muted-foreground">Used when no model is specified for analysis.</p>
                         <InputError :message="form.errors.ai_default_model" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="ai_api_timeout">API timeout (seconds)</Label>
+                        <Input id="ai_api_timeout" type="number" v-model="form.ai_api_timeout" min="10" max="300" class="sm:w-1/2" />
+                        <p class="text-sm text-muted-foreground">Time in seconds before AI API calls are aborted (10–300).</p>
+                        <InputError :message="form.errors.ai_api_timeout" />
                     </div>
 
                     <!-- Gemini -->

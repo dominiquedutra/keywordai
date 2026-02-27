@@ -27,6 +27,7 @@ class GlobalSettingsController extends Controller
                 'ai_gemini_custom_instructions' => Setting::getValue('ai_gemini_custom_instructions', ''),
                 'ai_openai_custom_instructions' => Setting::getValue('ai_openai_custom_instructions', ''),
                 'ai_openrouter_custom_instructions' => Setting::getValue('ai_openrouter_custom_instructions', ''),
+                'ai_api_timeout' => Setting::getValue('ai_api_timeout', '120'),
                 'has_gemini_key' => !empty(Setting::getValue('ai_gemini_api_key')),
                 'has_openai_key' => !empty(Setting::getValue('ai_openai_api_key')),
                 'has_openrouter_key' => !empty(Setting::getValue('ai_openrouter_api_key')),
@@ -50,6 +51,7 @@ class GlobalSettingsController extends Controller
             'ai_gemini_custom_instructions' => ['nullable', 'string'],
             'ai_openai_custom_instructions' => ['nullable', 'string'],
             'ai_openrouter_custom_instructions' => ['nullable', 'string'],
+            'ai_api_timeout' => ['required', 'integer', 'min:10', 'max:300'],
         ]);
 
         $encryptedKeys = ['ai_gemini_api_key', 'ai_openai_api_key', 'ai_openrouter_api_key'];

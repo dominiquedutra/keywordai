@@ -55,5 +55,12 @@ class SettingsSeeder extends Seeder
             'text',
             'Instruções customizadas específicas para o modelo OpenRouter'
         );
+
+        Setting::setValue(
+            'ai_api_timeout',
+            '120',
+            'string',
+            'Timeout em segundos para chamadas à API de IA'
+        );
     }
 }
