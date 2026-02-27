@@ -40,6 +40,7 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        @include('components.navbar')
         @inertia
     </body>
 </html>
