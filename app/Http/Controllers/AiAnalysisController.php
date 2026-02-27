@@ -72,7 +72,7 @@ class AiAnalysisController extends Controller
             'min_clicks' => 'nullable|integer|min:0',
             'min_cost' => 'nullable|numeric|min:0',
             'model' => 'required|in:gemini,openai,openrouter',
-            'limit' => 'required|integer|min:1|max:100',
+            'limit' => 'required|integer|min:1|max:1000',
         ]);
 
         // Preparar os filtros
