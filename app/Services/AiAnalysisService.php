@@ -494,7 +494,7 @@ class AiAnalysisService
                 ]
             ],
             'temperature' => 0.2,
-            'max_tokens' => (int) setting('ai_gemini_max_output_tokens', 8192),
+            'max_tokens' => min((int) setting('ai_gemini_max_output_tokens', 8192), 16384),
         ]);
 
         $this->lastHttpStatus = $response->status();
@@ -582,7 +582,7 @@ class AiAnalysisService
                 ]
             ],
             'temperature' => 0.2,
-            'max_tokens' => (int) setting('ai_gemini_max_output_tokens', 8192),
+            'max_tokens' => min((int) setting('ai_gemini_max_output_tokens', 8192), 32768),
         ]);
 
         $this->lastHttpStatus = $response->status();
