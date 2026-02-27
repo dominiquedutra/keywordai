@@ -14,12 +14,6 @@ class AiAnalysisService
 {
     private int $lastHttpStatus = 0;
     private ?string $lastRawResponse = null;
-    private NegativeKeywordsSummaryService $summaryService;
-
-    public function __construct(NegativeKeywordsSummaryService $summaryService)
-    {
-        $this->summaryService = $summaryService;
-    }
 
     /**
      * Analisa termos de pesquisa com IA.
@@ -89,12 +83,9 @@ class AiAnalysisService
             ];
         }
 
-        // Coletar palavras-chave positivas para contexto
+        // Coletar palavras-chave negativas e positivas para contexto
+        $negativeKeywords = $this->collectNegativeKeywords();
         $positiveKeywords = $this->collectPositiveKeywords();
-
-        // Obter resumo e lista compacta de negativos
-        $negativesSummary = $this->summaryService->getSummary() ?? '';
-        $negativesCompactList = $this->summaryService->getCompactKeywordList();
 
         // Obter instruções de IA (DB)
         $globalInstructions = setting('ai_global_custom_instructions', '');
@@ -103,12 +94,11 @@ class AiAnalysisService
         // Construir o prompt
         $prompt = $this->buildPrompt(
             $searchTerms,
+            $negativeKeywords,
             $positiveKeywords,
             $globalInstructions,
             $modelSpecificInstructions,
-            $date,
-            $negativesSummary,
-            $negativesCompactList
+            $date
         );
 
         $logData['prompt'] = $prompt;
@@ -242,22 +232,20 @@ class AiAnalysisService
      * Constrói o prompt para a IA.
      *
      * @param Collection $searchTerms Termos de pesquisa
+     * @param Collection $negativeKeywords Palavras-chave negativas
      * @param Collection $positiveKeywords Palavras-chave positivas
      * @param string $globalInstructions Instruções globais
      * @param string $modelSpecificInstructions Instruções específicas do modelo
      * @param Carbon|null $date Data específica (null para análise por custo)
-     * @param string $negativesSummary AI-generated synthesis of negative keywords
-     * @param string $negativesCompactList Compact keyword list (keyword (match_type) per line)
      * @return string Prompt formatado
      */
     public function buildPrompt(
         Collection $searchTerms,
+        Collection $negativeKeywords,
         Collection $positiveKeywords,
         string $globalInstructions,
         string $modelSpecificInstructions,
-        ?Carbon $date,
-        string $negativesSummary = '',
-        string $negativesCompactList = ''
+        ?Carbon $date
     ): string {
         $prompt = "# Instruções\n\n";
 
@@ -283,20 +271,17 @@ class AiAnalysisService
             }
         }
 
-        // Adicionar contexto de palavras-chave negativas (compact format)
+        // Adicionar contexto de palavras-chave negativas
         $prompt .= "# Palavras-chave Negativas Existentes\n\n";
 
-        if (empty($negativesCompactList)) {
+        if ($negativeKeywords->isEmpty()) {
             $prompt .= "Não há palavras-chave negativas existentes.\n\n";
         } else {
-            if (!empty($negativesSummary)) {
-                $prompt .= "## Perfil de Negativação (Resumo)\n\n";
-                $prompt .= "{$negativesSummary}\n\n";
+            foreach ($negativeKeywords as $keyword) {
+                $reason = !empty($keyword->reason) ? $keyword->reason : "Sem motivo especificado";
+                $prompt .= "- Palavra-chave: \"{$keyword->keyword}\" (Tipo: {$keyword->match_type})\n";
+                $prompt .= "  Motivo: {$reason}\n\n";
             }
-
-            $keywordCount = substr_count($negativesCompactList, "\n") + 1;
-            $prompt .= "## Lista Completa ({$keywordCount} palavras-chave)\n\n";
-            $prompt .= "{$negativesCompactList}\n\n";
         }
 
         // Adicionar contexto de palavras-chave positivas

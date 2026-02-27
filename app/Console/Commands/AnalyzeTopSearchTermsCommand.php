@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Services\AiAnalysisService;
-use App\Services\NegativeKeywordsSummaryService;
 use Illuminate\Console\Command;
 
 class AnalyzeTopSearchTermsCommand extends Command
@@ -29,13 +28,11 @@ class AnalyzeTopSearchTermsCommand extends Command
     protected $description = 'Analisa os termos de pesquisa com status NONE de maior custo usando IA para identificar candidatos à negativação';
 
     protected AiAnalysisService $aiAnalysisService;
-    protected NegativeKeywordsSummaryService $summaryService;
 
-    public function __construct(AiAnalysisService $aiAnalysisService, NegativeKeywordsSummaryService $summaryService)
+    public function __construct(AiAnalysisService $aiAnalysisService)
     {
         parent::__construct();
         $this->aiAnalysisService = $aiAnalysisService;
-        $this->summaryService = $summaryService;
     }
 
     /**
@@ -60,17 +57,13 @@ class AnalyzeTopSearchTermsCommand extends Command
         try {
             // Obter o prompt para exibição, se solicitado
             if ($showPrompt) {
-                $negativesSummary = $this->summaryService->getSummary() ?? '';
-                $negativesCompactList = $this->summaryService->getCompactKeywordList();
-
                 $prompt = $this->aiAnalysisService->buildPrompt(
                     $this->aiAnalysisService->collectSearchTerms(null, $limit, $filters),
+                    $this->aiAnalysisService->collectNegativeKeywords(),
                     $this->aiAnalysisService->collectPositiveKeywords(),
                     config('ai.instructions.global', ''),
                     config("ai.instructions.{$model}", ''),
-                    null,
-                    $negativesSummary,
-                    $negativesCompactList
+                    null
                 );
                 
                 $this->info("Prompt gerado:");
