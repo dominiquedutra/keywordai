@@ -36,11 +36,11 @@ class AiAnalysisController extends Controller
      */
     public function index()
     {
-        // Obter os modelos de IA disponíveis
+        // Obter os modelos de IA disponíveis (com nome real do modelo configurado)
         $aiModels = [
-            'gemini' => 'Gemini (Google)',
-            'openai' => 'OpenAI (GPT)',
-            'openrouter' => 'OpenRouter'
+            'gemini' => 'Gemini — ' . (setting('ai_gemini_model') ?: 'gemini-2.0-flash'),
+            'openai' => 'OpenAI — ' . (setting('ai_openai_model') ?: 'gpt-4o-mini'),
+            'openrouter' => 'OpenRouter — ' . (setting('ai_openrouter_model') ?: 'google/gemini-2.0-flash-001'),
         ];
 
         // Obter o modelo padrão

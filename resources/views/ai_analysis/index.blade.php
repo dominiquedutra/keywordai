@@ -99,7 +99,7 @@
             <!-- Métricas da API -->
             <div id="api-metrics" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
                 <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Métricas da API</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Modelo Utilizado:</span>
                         <span id="model-used" class="text-gray-900 dark:text-gray-100"></span>
@@ -112,8 +112,22 @@
                         <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Termos Analisados:</span>
                         <span id="terms-count" class="text-gray-900 dark:text-gray-100"></span>
                     </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tokens Utilizados:</span>
+                        <span id="token-usage" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Prompt Enviado -->
+            <details id="prompt-details" class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+                <summary class="p-4 cursor-pointer text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    Prompt enviado ao modelo
+                </summary>
+                <div class="px-4 pb-4">
+                    <pre id="prompt-content" class="bg-gray-50 dark:bg-gray-900 rounded p-4 text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"></pre>
+                </div>
+            </details>
 
             <!-- Ações em Lote -->
             <div id="batch-actions" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
@@ -237,6 +251,9 @@
             const modelUsed = document.getElementById('model-used');
             const responseTime = document.getElementById('response-time');
             const termsCount = document.getElementById('terms-count');
+            const tokenUsage = document.getElementById('token-usage');
+            const promptDetails = document.getElementById('prompt-details');
+            const promptContent = document.getElementById('prompt-content');
             
             // Elementos de ações em lote
             const selectAllButton = document.getElementById('select-all-button');
@@ -298,6 +315,19 @@
                         modelUsed.textContent = `${data.metrics.model} (${data.metrics.model_name})`;
                         responseTime.textContent = `${data.metrics.duration} segundos`;
                         termsCount.textContent = `${data.data.length} termos`;
+
+                        // Token usage
+                        if (data.metrics.usage) {
+                            const u = data.metrics.usage;
+                            tokenUsage.textContent = `${u.prompt_tokens.toLocaleString()} in + ${u.completion_tokens.toLocaleString()} out = ${u.total_tokens.toLocaleString()} tokens`;
+                        } else {
+                            tokenUsage.textContent = 'Não disponível';
+                        }
+
+                        // Prompt enviado
+                        if (data.metrics.prompt) {
+                            promptContent.textContent = data.metrics.prompt;
+                        }
                         
                         // Limpar a tabela de resultados
                         resultsTableBody.innerHTML = '';

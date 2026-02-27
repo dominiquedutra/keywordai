@@ -88,17 +88,10 @@ const openaiModels: ModelOption[] = [
 ];
 
 const defaultOpenrouterModels: ModelOption[] = [
-    { id: 'google/gemini-2.5-flash', name: 'gemini-2.5-flash', inputPrice: '0.15', outputPrice: '0.60', badge: '⚡ Fast', badgeColor: 'blue' },
-    {
-        id: 'google/gemini-2.5-flash-lite-preview-06-17',
-        name: 'gemini-2.5-flash-lite',
-        inputPrice: '0.10',
-        outputPrice: '0.40',
-        badge: 'Cheapest',
-        badgeColor: 'green',
-    },
-    { id: 'openai/gpt-4.1-mini', name: 'gpt-4.1-mini', inputPrice: '0.40', outputPrice: '1.60', badge: '⚡ Fast', badgeColor: 'blue' },
     { id: 'anthropic/claude-sonnet-4', name: 'claude-sonnet-4', inputPrice: '3.00', outputPrice: '15.00', badge: 'Precise', badgeColor: 'purple' },
+    { id: 'anthropic/claude-haiku-4', name: 'claude-haiku-4', inputPrice: '0.80', outputPrice: '4.00', badge: '⚡ Fast', badgeColor: 'blue' },
+    { id: 'mistralai/mistral-small-3.2-24b-instruct', name: 'mistral-small-3.2', inputPrice: '0.10', outputPrice: '0.30', badge: 'Cheapest', badgeColor: 'green' },
+    { id: 'deepseek/deepseek-chat-v3-0324', name: 'deepseek-v3', inputPrice: '0.30', outputPrice: '0.88', badge: '⚡ Fast', badgeColor: 'blue' },
 ];
 
 const openrouterModels = ref<ModelOption[]>([...defaultOpenrouterModels]);

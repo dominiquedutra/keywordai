@@ -71,21 +71,23 @@ class AiAnalysisService
         $startTime = microtime(true);
         
         try {
-            $response = $this->callAiApi($model, $apiKey, $prompt);
-            
+            $apiResponse = $this->callAiApi($model, $apiKey, $prompt);
+
             $endTime = microtime(true);
             $duration = round($endTime - $startTime, 2);
-            
+
             // Preparar os resultados
-            $results = $this->prepareResults($searchTerms, $response);
-            
+            $results = $this->prepareResults($searchTerms, $apiResponse['results']);
+
             // Métricas da API
             $metrics = [
                 'model' => $model,
                 'model_name' => $modelName,
-                'duration' => $duration
+                'duration' => $duration,
+                'prompt' => $prompt,
+                'usage' => $apiResponse['usage'],
             ];
-            
+
             return [
                 'success' => true,
                 'message' => 'Análise concluída com sucesso.',
@@ -314,7 +316,7 @@ class AiAnalysisService
         
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
-        ])->withQueryParameters([
+        ])->timeout(120)->withQueryParameters([
             'key' => $apiKey,
         ])->post($url, [
             'contents' => [
@@ -363,12 +365,25 @@ class AiAnalysisService
         
         // Decodificar o JSON
         $result = json_decode($jsonText, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
-        
-        return $result;
+
+        // Extrair token usage do Gemini
+        $usage = null;
+        if (isset($data['usageMetadata'])) {
+            $usage = [
+                'prompt_tokens' => $data['usageMetadata']['promptTokenCount'] ?? 0,
+                'completion_tokens' => $data['usageMetadata']['candidatesTokenCount'] ?? 0,
+                'total_tokens' => $data['usageMetadata']['totalTokenCount'] ?? 0,
+            ];
+        }
+
+        return [
+            'results' => $result,
+            'usage' => $usage,
+        ];
     }
 
     /**
@@ -386,7 +401,7 @@ class AiAnalysisService
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->post($url, [
+        ])->timeout(120)->post($url, [
             'model' => setting('ai_openai_model') ?: config('ai.models.openai.model_name', 'gpt-4o-mini'),
             'messages' => [
                 [
@@ -431,12 +446,25 @@ class AiAnalysisService
         
         // Decodificar o JSON
         $result = json_decode($jsonText, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
-        
-        return $result;
+
+        // Extrair token usage do OpenAI
+        $usage = null;
+        if (isset($data['usage'])) {
+            $usage = [
+                'prompt_tokens' => $data['usage']['prompt_tokens'] ?? 0,
+                'completion_tokens' => $data['usage']['completion_tokens'] ?? 0,
+                'total_tokens' => $data['usage']['total_tokens'] ?? 0,
+            ];
+        }
+
+        return [
+            'results' => $result,
+            'usage' => $usage,
+        ];
     }
 
     /**
@@ -454,7 +482,7 @@ class AiAnalysisService
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->post($url, [
+        ])->timeout(120)->post($url, [
             'model' => setting('ai_openrouter_model') ?: config('ai.models.openrouter.model_name', 'google/gemini-2.0-flash-001'),
             'messages' => [
                 [
@@ -504,7 +532,20 @@ class AiAnalysisService
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
 
-        return $result;
+        // Extrair token usage do OpenRouter (mesmo formato do OpenAI)
+        $usage = null;
+        if (isset($data['usage'])) {
+            $usage = [
+                'prompt_tokens' => $data['usage']['prompt_tokens'] ?? 0,
+                'completion_tokens' => $data['usage']['completion_tokens'] ?? 0,
+                'total_tokens' => $data['usage']['total_tokens'] ?? 0,
+            ];
+        }
+
+        return [
+            'results' => $result,
+            'usage' => $usage,
+        ];
     }
 
     /**
@@ -601,7 +642,8 @@ class AiAnalysisService
         $prompt .= "  \"summary\": \"Resumo geral da análise\"\n";
         $prompt .= "}\n";
 
-        $response = $this->callAiApi($model, $apiKey, $prompt);
+        $apiResponse = $this->callAiApi($model, $apiKey, $prompt);
+        $response = $apiResponse['results'];
 
         return [
             'suggestions' => $response['suggestions'] ?? [],
