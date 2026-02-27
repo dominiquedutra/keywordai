@@ -2,51 +2,39 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SyncSearchTermStatsJob;
+use App\Jobs\BatchSyncSearchTermStatsJob;
 use App\Models\SearchTerm;
 use Illuminate\Console\Command;
 
 class SyncAllActiveStatsCommand extends Command
 {
     protected $signature = 'keywordai:sync-all-active-stats
-                            {--queue=default : Nome da fila para os jobs}
-                            {--chunk-size=100 : Quantidade de termos por lote}
-                            {--dry-run : Apenas mostrar quantos termos seriam sincronizados}';
+                            {--queue=default : Nome da fila para o job}
+                            {--dry-run : Apenas mostrar o que seria feito}';
 
-    protected $description = 'Sincroniza estatísticas de todos os termos de pesquisa ativos (não excluídos)';
+    protected $description = 'Sincroniza estatísticas de todos os termos de pesquisa ativos via batch (1 chamada à API)';
 
     public function handle(): int
     {
-        $chunkSize = (int) $this->option('chunk-size');
         $queue = $this->option('queue');
         $dryRun = $this->option('dry-run');
 
-        $query = SearchTerm::where('status', '!=', 'EXCLUDED');
-        $total = $query->count();
+        $activeCount = SearchTerm::where('status', '!=', 'EXCLUDED')->count();
 
-        if ($total === 0) {
+        if ($activeCount === 0) {
             $this->warn('Nenhum termo de pesquisa ativo encontrado.');
             return self::SUCCESS;
         }
 
         if ($dryRun) {
-            $this->info("Modo dry-run: {$total} termos seriam sincronizados em lotes de {$chunkSize}.");
+            $this->info("Modo dry-run: {$activeCount} termos ativos seriam sincronizados em 1 job batch (1 chamada à API).");
             $this->info("Fila: {$queue}");
             return self::SUCCESS;
         }
 
-        $this->info("Enfileirando sincronização de estatísticas para {$total} termos...");
+        BatchSyncSearchTermStatsJob::dispatch()->onQueue($queue);
 
-        $dispatched = 0;
-
-        $query->chunkById($chunkSize, function ($terms) use ($queue, &$dispatched) {
-            foreach ($terms as $term) {
-                SyncSearchTermStatsJob::dispatch($term)->onQueue($queue);
-                $dispatched++;
-            }
-        });
-
-        $this->info("Concluído: {$dispatched} jobs enfileirados na fila '{$queue}'.");
+        $this->info("1 BatchSyncSearchTermStatsJob enfileirado na fila '{$queue}' para sincronizar {$activeCount} termos ativos.");
 
         return self::SUCCESS;
     }
