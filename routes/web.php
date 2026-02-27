@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Rotas para análise de IA
     Route::get('/ai-analysis', [App\Http\Controllers\AiAnalysisController::class, 'index'])->name('ai-analysis.index');
+    Route::post('/ai-analysis/preview', [App\Http\Controllers\AiAnalysisController::class, 'preview'])->name('ai-analysis.preview');
     Route::post('/ai-analysis/analyze', [App\Http\Controllers\AiAnalysisController::class, 'analyze'])->name('ai-analysis.analyze');
     Route::post('/ai-analysis/negate', [App\Http\Controllers\AiAnalysisController::class, 'batchNegate'])->name('ai-analysis.negate');
     

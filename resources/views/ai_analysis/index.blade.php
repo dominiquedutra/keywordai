@@ -85,32 +85,34 @@
             </form>
         </div>
 
-        <!-- Área de Resultados (inicialmente oculta) -->
-        <div id="results-container" class="hidden">
-            <!-- Métricas da API -->
-            <div id="api-metrics" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
-                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Métricas da API</h2>
+        <!-- Prompt Preview (shown immediately after preview call) -->
+        <div id="prompt-preview-container" class="hidden">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Modelo Utilizado:</span>
-                        <span id="model-used" class="text-gray-900 dark:text-gray-100"></span>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Modelo:</span>
+                        <span id="preview-model" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Termos Encontrados:</span>
+                        <span id="preview-terms-count" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tamanho do Prompt:</span>
+                        <span id="preview-prompt-size" class="text-gray-900 dark:text-gray-100"></span>
                     </div>
                     <div>
                         <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tempo de Resposta:</span>
-                        <span id="response-time" class="text-gray-900 dark:text-gray-100"></span>
-                    </div>
-                    <div>
-                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Termos Analisados:</span>
-                        <span id="terms-count" class="text-gray-900 dark:text-gray-100"></span>
-                    </div>
-                    <div>
-                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tokens Utilizados:</span>
-                        <span id="token-usage" class="text-gray-900 dark:text-gray-100"></span>
+                        <span id="response-time" class="text-gray-900 dark:text-gray-100">
+                            <span class="inline-flex items-center gap-1 text-muted-foreground">
+                                <svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                                Aguardando...
+                            </span>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- Prompt Enviado -->
             <details id="prompt-details" class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
                 <summary class="p-4 cursor-pointer text-lg font-semibold text-gray-800 dark:text-gray-200">
                     Prompt enviado ao modelo
@@ -119,6 +121,28 @@
                     <pre id="prompt-content" class="bg-gray-50 dark:bg-gray-900 rounded p-4 text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-[500px] overflow-y-auto text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"></pre>
                 </div>
             </details>
+        </div>
+
+        <!-- Área de Resultados (shown after AI analysis completes) -->
+        <div id="results-container" class="hidden">
+            <!-- Métricas da API (updated after analysis) -->
+            <div id="api-metrics" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Resultado da Análise</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Termos Analisados:</span>
+                        <span id="terms-count" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tokens Utilizados:</span>
+                        <span id="token-usage" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Tempo de Resposta:</span>
+                        <span id="response-time-final" class="text-gray-900 dark:text-gray-100"></span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Ações em Lote -->
             <div id="batch-actions" class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
@@ -221,6 +245,7 @@
             const analyzeText = document.getElementById('analyze-text');
             const analyzeLoading = document.getElementById('analyze-loading');
 
+            const promptPreviewContainer = document.getElementById('prompt-preview-container');
             const resultsContainer = document.getElementById('results-container');
             const loadingContainer = document.getElementById('loading-container');
             const errorContainer = document.getElementById('error-container');
@@ -228,8 +253,11 @@
             const resultsTable = document.getElementById('results-table');
             const resultsTableBody = resultsTable.querySelector('tbody');
 
-            const modelUsed = document.getElementById('model-used');
+            const previewModel = document.getElementById('preview-model');
+            const previewTermsCount = document.getElementById('preview-terms-count');
+            const previewPromptSize = document.getElementById('preview-prompt-size');
             const responseTime = document.getElementById('response-time');
+            const responseTimeFinal = document.getElementById('response-time-final');
             const termsCount = document.getElementById('terms-count');
             const tokenUsage = document.getElementById('token-usage');
             const promptDetails = document.getElementById('prompt-details');
@@ -253,6 +281,12 @@
                 });
             });
 
+            function formatBytes(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+
             analysisForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
@@ -261,28 +295,70 @@
                 analyzeLoading.classList.remove('hidden');
 
                 resultsContainer.classList.add('hidden');
+                promptPreviewContainer.classList.add('hidden');
                 errorContainer.classList.add('hidden');
                 loadingContainer.classList.remove('hidden');
 
                 const formData = new FormData(analysisForm);
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const headers = {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
 
+                // Step 1: Preview — get prompt and metadata immediately
+                try {
+                    const previewResponse = await fetch('{{ route("ai-analysis.preview") }}', {
+                        method: 'POST', headers, body: formData
+                    });
+                    const previewData = await previewResponse.json();
+
+                    if (!previewResponse.ok || !previewData.success) {
+                        errorMessage.textContent = previewData.message || 'Nenhum termo encontrado.';
+                        loadingContainer.classList.add('hidden');
+                        errorContainer.classList.remove('hidden');
+                        analyzeButton.disabled = false;
+                        analyzeText.classList.remove('hidden');
+                        analyzeLoading.classList.add('hidden');
+                        return;
+                    }
+
+                    // Show prompt preview immediately
+                    previewModel.textContent = `${previewData.model} (${previewData.model_name})`;
+                    previewTermsCount.textContent = `${previewData.terms_count} termos`;
+                    previewPromptSize.textContent = formatBytes(previewData.prompt_size);
+                    promptContent.textContent = previewData.prompt;
+                    responseTime.innerHTML = '<span class="inline-flex items-center gap-1 text-muted-foreground"><svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Aguardando IA...</span>';
+                    promptPreviewContainer.classList.remove('hidden');
+
+                } catch (error) {
+                    console.error('Erro no preview:', error);
+                    errorMessage.textContent = 'Erro ao gerar preview do prompt.';
+                    loadingContainer.classList.add('hidden');
+                    errorContainer.classList.remove('hidden');
+                    analyzeButton.disabled = false;
+                    analyzeText.classList.remove('hidden');
+                    analyzeLoading.classList.add('hidden');
+                    return;
+                }
+
+                // Step 2: Analyze — call the AI API
+                const analysisStart = performance.now();
                 try {
                     const response = await fetch('{{ route("ai-analysis.analyze") }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
+                        method: 'POST', headers, body: formData
                     });
 
                     const data = await response.json();
+                    const elapsed = ((performance.now() - analysisStart) / 1000).toFixed(1);
 
                     if (response.ok && data.success) {
-                        modelUsed.textContent = `${data.metrics.model} (${data.metrics.model_name})`;
-                        responseTime.textContent = `${data.metrics.duration} segundos`;
+                        // Update response time in preview panel
+                        const serverTime = data.metrics.duration ? `${data.metrics.duration}s servidor` : '';
+                        responseTime.textContent = `${elapsed}s total` + (serverTime ? ` (${serverTime})` : '');
+                        responseTimeFinal.textContent = `${elapsed}s total` + (serverTime ? ` (${serverTime})` : '');
+
                         termsCount.textContent = `${data.data.length} termos`;
 
                         if (data.metrics.usage) {
@@ -290,10 +366,6 @@
                             tokenUsage.textContent = `${u.prompt_tokens.toLocaleString()} in + ${u.completion_tokens.toLocaleString()} out = ${u.total_tokens.toLocaleString()} tokens`;
                         } else {
                             tokenUsage.textContent = 'Não disponível';
-                        }
-
-                        if (data.metrics.prompt) {
-                            promptContent.textContent = data.metrics.prompt;
                         }
 
                         resultsTableBody.innerHTML = '';
