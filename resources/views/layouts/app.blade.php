@@ -43,7 +43,7 @@
 <body class="font-sans antialiased bg-background text-foreground">
     @include('components.navbar')
 
-    <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 md:p-6">
+    <main class="flex w-full flex-1 flex-col gap-4 p-4 md:p-6">
         @yield('content')
     </main>
 
