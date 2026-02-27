@@ -9,14 +9,15 @@ import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
-defineProps<{
+const props = defineProps<{
     status?: string;
     canResetPassword: boolean;
+    isLocal?: boolean;
 }>();
 
 const form = useForm({
-    email: '',
-    password: '',
+    email: props.isLocal ? 'admin@keywordai.com' : '',
+    password: props.isLocal ? 'password' : '',
     remember: false,
 });
 
