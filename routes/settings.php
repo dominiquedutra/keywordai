@@ -26,4 +26,7 @@ Route::middleware('auth')->group(function () {
     
     Route::patch('settings/global', [GlobalSettingsController::class, 'update'])
         ->name('settings.global.update');
+
+    Route::post('settings/openrouter-models', [GlobalSettingsController::class, 'fetchOpenRouterModels'])
+        ->name('settings.openrouter-models');
 });

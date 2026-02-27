@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
+import ModelSelect, { type ModelOption } from '@/components/ModelSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +62,78 @@ const submit = () => {
         preserveScroll: true,
     });
 };
+
+// --- Curated model lists ---
+
+const geminiModels: ModelOption[] = [
+    {
+        id: 'gemini-2.5-flash-lite-preview-06-17',
+        name: 'gemini-2.5-flash-lite',
+        inputPrice: '0.10',
+        outputPrice: '0.40',
+        badge: 'Cheapest',
+        badgeColor: 'green',
+    },
+    { id: 'gemini-2.5-flash', name: 'gemini-2.5-flash', inputPrice: '0.15', outputPrice: '0.60', badge: '⚡ Fast', badgeColor: 'blue' },
+    { id: 'gemini-2.5-pro', name: 'gemini-2.5-pro', inputPrice: '1.25', outputPrice: '10.00', badge: 'Precise', badgeColor: 'purple' },
+    { id: 'gemini-2.0-flash', name: 'gemini-2.0-flash', inputPrice: '0.10', outputPrice: '0.40', badge: 'Legacy', badgeColor: 'gray' },
+];
+
+const openaiModels: ModelOption[] = [
+    { id: 'gpt-4.1-nano', name: 'gpt-4.1-nano', inputPrice: '0.10', outputPrice: '0.40', badge: 'Cheapest', badgeColor: 'green' },
+    { id: 'gpt-4.1-mini', name: 'gpt-4.1-mini', inputPrice: '0.40', outputPrice: '1.60', badge: '⚡ Fast', badgeColor: 'blue' },
+    { id: 'gpt-4o-mini', name: 'gpt-4o-mini', inputPrice: '0.15', outputPrice: '0.60', badge: '⚡ Fast', badgeColor: 'blue' },
+    { id: 'gpt-4.1', name: 'gpt-4.1', inputPrice: '2.00', outputPrice: '8.00', badge: 'Precise', badgeColor: 'purple' },
+    { id: 'gpt-4o', name: 'gpt-4o', inputPrice: '2.50', outputPrice: '10.00', badge: 'Precise', badgeColor: 'purple' },
+];
+
+const defaultOpenrouterModels: ModelOption[] = [
+    { id: 'google/gemini-2.5-flash', name: 'gemini-2.5-flash', inputPrice: '0.15', outputPrice: '0.60', badge: '⚡ Fast', badgeColor: 'blue' },
+    {
+        id: 'google/gemini-2.5-flash-lite-preview-06-17',
+        name: 'gemini-2.5-flash-lite',
+        inputPrice: '0.10',
+        outputPrice: '0.40',
+        badge: 'Cheapest',
+        badgeColor: 'green',
+    },
+    { id: 'openai/gpt-4.1-mini', name: 'gpt-4.1-mini', inputPrice: '0.40', outputPrice: '1.60', badge: '⚡ Fast', badgeColor: 'blue' },
+    { id: 'anthropic/claude-sonnet-4', name: 'claude-sonnet-4', inputPrice: '3.00', outputPrice: '15.00', badge: 'Precise', badgeColor: 'purple' },
+];
+
+const openrouterModels = ref<ModelOption[]>([...defaultOpenrouterModels]);
+const fetchingModels = ref(false);
+const fetchError = ref('');
+
+async function fetchOpenRouterModels() {
+    fetchingModels.value = true;
+    fetchError.value = '';
+
+    try {
+        const response = await fetch('/settings/openrouter-models', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content || '',
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            fetchError.value = data.error || 'Failed to fetch models';
+            return;
+        }
+
+        if (data.models && data.models.length > 0) {
+            openrouterModels.value = data.models;
+        }
+    } catch {
+        fetchError.value = 'Network error. Check your connection.';
+    } finally {
+        fetchingModels.value = false;
+    }
+}
 </script>
 
 <template>
@@ -126,7 +200,7 @@ const submit = () => {
                     </div>
 
                     <!-- Gemini -->
-                    <div class="rounded-lg border p-4 space-y-4">
+                    <div class="space-y-4 rounded-lg border p-4">
                         <h4 class="text-sm font-medium">Google Gemini</h4>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
@@ -142,17 +216,14 @@ const submit = () => {
                             </div>
                             <div class="grid gap-2">
                                 <Label for="ai_gemini_model">Model</Label>
-                                <Input id="ai_gemini_model" v-model="form.ai_gemini_model" />
-                                <p class="text-sm text-muted-foreground">
-                                    e.g. <code class="text-xs">gemini-2.0-flash</code>, <code class="text-xs">gemini-2.5-pro</code>
-                                </p>
+                                <ModelSelect id="ai_gemini_model" v-model="form.ai_gemini_model" :models="geminiModels" />
                                 <InputError :message="form.errors.ai_gemini_model" />
                             </div>
                         </div>
                     </div>
 
                     <!-- OpenAI -->
-                    <div class="rounded-lg border p-4 space-y-4">
+                    <div class="space-y-4 rounded-lg border p-4">
                         <h4 class="text-sm font-medium">OpenAI</h4>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
@@ -168,17 +239,14 @@ const submit = () => {
                             </div>
                             <div class="grid gap-2">
                                 <Label for="ai_openai_model">Model</Label>
-                                <Input id="ai_openai_model" v-model="form.ai_openai_model" />
-                                <p class="text-sm text-muted-foreground">
-                                    e.g. <code class="text-xs">gpt-4o-mini</code>, <code class="text-xs">gpt-4o</code>
-                                </p>
+                                <ModelSelect id="ai_openai_model" v-model="form.ai_openai_model" :models="openaiModels" />
                                 <InputError :message="form.errors.ai_openai_model" />
                             </div>
                         </div>
                     </div>
 
                     <!-- OpenRouter -->
-                    <div class="rounded-lg border p-4 space-y-4">
+                    <div class="space-y-4 rounded-lg border p-4">
                         <h4 class="text-sm font-medium">OpenRouter</h4>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
@@ -194,10 +262,34 @@ const submit = () => {
                             </div>
                             <div class="grid gap-2">
                                 <Label for="ai_openrouter_model">Model</Label>
-                                <Input id="ai_openrouter_model" v-model="form.ai_openrouter_model" />
-                                <p class="text-sm text-muted-foreground">
-                                    e.g. <code class="text-xs">google/gemini-2.0-flash-001</code>, <code class="text-xs">anthropic/claude-sonnet-4</code>
-                                </p>
+                                <div class="flex items-start gap-2">
+                                    <div class="flex-1">
+                                        <ModelSelect id="ai_openrouter_model" v-model="form.ai_openrouter_model" :models="openrouterModels" />
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="mt-0 shrink-0"
+                                        :disabled="fetchingModels"
+                                        @click="fetchOpenRouterModels"
+                                    >
+                                        <template v-if="fetchingModels">
+                                            <svg
+                                                class="-ml-1 mr-1.5 h-3.5 w-3.5 animate-spin"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                            </svg>
+                                            Loading...
+                                        </template>
+                                        <template v-else>Fetch models</template>
+                                    </Button>
+                                </div>
+                                <p v-if="fetchError" class="text-sm text-red-600">{{ fetchError }}</p>
                                 <InputError :message="form.errors.ai_openrouter_model" />
                             </div>
                         </div>

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -70,5 +72,71 @@ class GlobalSettingsController extends Controller
         }
 
         return redirect()->route('settings.global.index');
+    }
+
+    public function fetchOpenRouterModels(): JsonResponse
+    {
+        $apiKey = Setting::getValue('ai_openrouter_api_key');
+
+        if (empty($apiKey)) {
+            return response()->json(['error' => 'Configure an OpenRouter API key first.'], 422);
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$apiKey}",
+        ])->timeout(15)->get('https://openrouter.ai/api/v1/models');
+
+        if (! $response->successful()) {
+            return response()->json(['error' => 'Failed to fetch models from OpenRouter.'], 502);
+        }
+
+        $data = $response->json('data', []);
+
+        $models = collect($data)
+            ->filter(fn ($m) => isset($m['id'], $m['pricing']['prompt'], $m['pricing']['completion'])
+                && $m['pricing']['prompt'] !== '0'
+                && str_contains($m['architecture']['modality'] ?? '', 'text'))
+            ->map(function ($m) {
+                $inputPerMillion = round((float) $m['pricing']['prompt'] * 1_000_000, 2);
+                $outputPerMillion = round((float) $m['pricing']['completion'] * 1_000_000, 2);
+
+                return [
+                    'id' => $m['id'],
+                    'name' => $m['name'] ?? $m['id'],
+                    'inputPrice' => number_format($inputPerMillion, 2),
+                    'outputPrice' => number_format($outputPerMillion, 2),
+                    'badge' => $this->classifyModelBadge($inputPerMillion),
+                    'badgeColor' => $this->classifyModelBadgeColor($inputPerMillion),
+                ];
+            })
+            ->sortBy('inputPrice')
+            ->values()
+            ->take(50);
+
+        return response()->json(['models' => $models]);
+    }
+
+    private function classifyModelBadge(float $inputPricePerMillion): string
+    {
+        if ($inputPricePerMillion <= 0.20) {
+            return 'Cheapest';
+        }
+        if ($inputPricePerMillion <= 1.00) {
+            return '⚡ Fast';
+        }
+
+        return 'Precise';
+    }
+
+    private function classifyModelBadgeColor(float $inputPricePerMillion): string
+    {
+        if ($inputPricePerMillion <= 0.20) {
+            return 'green';
+        }
+        if ($inputPricePerMillion <= 1.00) {
+            return 'blue';
+        }
+
+        return 'purple';
     }
 }
