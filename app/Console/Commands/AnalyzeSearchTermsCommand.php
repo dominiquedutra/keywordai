@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\AiAnalysisService;
+use App\Services\NegativeKeywordsSummaryService;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 
@@ -29,23 +30,14 @@ class AnalyzeSearchTermsCommand extends Command
      */
     protected $description = 'Analisa termos de pesquisa com status NONE usando IA para identificar candidatos à negativação';
 
-    /**
-     * O serviço de análise de IA.
-     *
-     * @var \App\Services\AiAnalysisService
-     */
-    protected $aiAnalysisService;
+    protected AiAnalysisService $aiAnalysisService;
+    protected NegativeKeywordsSummaryService $summaryService;
 
-    /**
-     * Cria uma nova instância do comando.
-     *
-     * @param \App\Services\AiAnalysisService $aiAnalysisService
-     * @return void
-     */
-    public function __construct(AiAnalysisService $aiAnalysisService)
+    public function __construct(AiAnalysisService $aiAnalysisService, NegativeKeywordsSummaryService $summaryService)
     {
         parent::__construct();
         $this->aiAnalysisService = $aiAnalysisService;
+        $this->summaryService = $summaryService;
     }
 
     /**
@@ -84,14 +76,17 @@ class AnalyzeSearchTermsCommand extends Command
         try {
             // Obter o prompt para exibição, se solicitado
             if ($showPrompt) {
-                // Obter o prompt diretamente do serviço
+                $negativesSummary = $this->summaryService->getSummary() ?? '';
+                $negativesCompactList = $this->summaryService->getCompactKeywordList();
+
                 $prompt = $this->aiAnalysisService->buildPrompt(
                     $this->aiAnalysisService->collectSearchTerms($parsedDate, $limit, $filters),
-                    $this->aiAnalysisService->collectNegativeKeywords(),
                     $this->aiAnalysisService->collectPositiveKeywords(),
                     config('ai.instructions.global', ''),
                     config("ai.instructions.{$model}", ''),
-                    $parsedDate
+                    $parsedDate,
+                    $negativesSummary,
+                    $negativesCompactList
                 );
                 
                 $this->info("Prompt gerado:");

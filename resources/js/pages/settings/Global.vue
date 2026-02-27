@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
@@ -13,6 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { type BreadcrumbItem } from '@/types';
+
+interface SummaryMeta {
+    generated_at: string;
+    keyword_count: number;
+    model_used: string;
+    summary_size_bytes: number;
+    duration_seconds: number;
+    prompt_tokens: number | null;
+    completion_tokens: number | null;
+}
 
 interface Settings {
     default_keyword_match_type: string;
@@ -29,6 +39,12 @@ interface Settings {
     has_gemini_key: boolean;
     has_openai_key: boolean;
     has_openrouter_key: boolean;
+    ai_summary_model: string;
+    ai_summary_model_name: string;
+    ai_gemini_max_output_tokens: string;
+    negatives_summary: string;
+    negatives_summary_meta: SummaryMeta | string | null;
+    negatives_summary_stale: boolean;
 }
 
 const props = defineProps<{
@@ -57,6 +73,9 @@ const form = useForm({
     ai_openai_custom_instructions: props.settings.ai_openai_custom_instructions,
     ai_openrouter_custom_instructions: props.settings.ai_openrouter_custom_instructions,
     ai_api_timeout: props.settings.ai_api_timeout,
+    ai_summary_model: props.settings.ai_summary_model,
+    ai_summary_model_name: props.settings.ai_summary_model_name,
+    ai_gemini_max_output_tokens: props.settings.ai_gemini_max_output_tokens,
 });
 
 const submit = () => {
@@ -129,6 +148,82 @@ async function fetchOpenRouterModels() {
         fetchingModels.value = false;
     }
 }
+
+// --- Summary model options ---
+const summaryModelOptions = [
+    { label: 'Gemini (Google)', value: 'gemini' },
+    { label: 'OpenAI (GPT)', value: 'openai' },
+    { label: 'OpenRouter', value: 'openrouter' },
+];
+
+// All model names mapped by provider for the summary model name selector
+const summaryModelNames: Record<string, ModelOption[]> = {
+    gemini: geminiModels,
+    openai: openaiModels,
+    openrouter: defaultOpenrouterModels,
+};
+
+const availableSummaryModelNames = computed(() => summaryModelNames[form.ai_summary_model] || geminiModels);
+
+// --- Negatives summary state ---
+const summaryText = ref(props.settings.negatives_summary || '');
+const summaryMeta = ref<SummaryMeta | null>(parseMeta(props.settings.negatives_summary_meta));
+const summaryStale = ref(props.settings.negatives_summary_stale);
+const regenerating = ref(false);
+const regenerateError = ref('');
+
+function parseMeta(raw: SummaryMeta | string | null): SummaryMeta | null {
+    if (!raw) return null;
+    if (typeof raw === 'object') return raw;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function formatDate(iso: string): string {
+    try {
+        return new Date(iso).toLocaleString('pt-BR');
+    } catch {
+        return iso;
+    }
+}
+
+async function regenerateSummary() {
+    regenerating.value = true;
+    regenerateError.value = '';
+
+    try {
+        const response = await fetch('/settings/regenerate-negatives-summary', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content || '',
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            regenerateError.value = data.error || 'Failed to regenerate summary';
+            return;
+        }
+
+        summaryText.value = data.summary;
+        summaryMeta.value = data.meta;
+        summaryStale.value = false;
+    } catch {
+        regenerateError.value = 'Network error. Check your connection.';
+    } finally {
+        regenerating.value = false;
+    }
+}
 </script>
 
 <template>
@@ -194,11 +289,20 @@ async function fetchOpenRouterModels() {
                         <InputError :message="form.errors.ai_default_model" />
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label for="ai_api_timeout">API timeout (seconds)</Label>
-                        <Input id="ai_api_timeout" type="number" v-model="form.ai_api_timeout" min="10" max="300" class="sm:w-1/2" />
-                        <p class="text-sm text-muted-foreground">Time in seconds before AI API calls are aborted (10–300).</p>
-                        <InputError :message="form.errors.ai_api_timeout" />
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="ai_api_timeout">API timeout (seconds)</Label>
+                            <Input id="ai_api_timeout" type="number" v-model="form.ai_api_timeout" min="10" max="300" />
+                            <p class="text-sm text-muted-foreground">Time before AI API calls are aborted (10-300).</p>
+                            <InputError :message="form.errors.ai_api_timeout" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="ai_gemini_max_output_tokens">Max output tokens</Label>
+                            <Input id="ai_gemini_max_output_tokens" type="number" v-model="form.ai_gemini_max_output_tokens" min="1024" max="65536" />
+                            <p class="text-sm text-muted-foreground">Maximum tokens for AI response (1024-65536).</p>
+                            <InputError :message="form.errors.ai_gemini_max_output_tokens" />
+                        </div>
                     </div>
 
                     <!-- Gemini -->
@@ -295,6 +399,103 @@ async function fetchOpenRouterModels() {
                                 <InputError :message="form.errors.ai_openrouter_model" />
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Negative Keywords Summary -->
+                <div class="space-y-6">
+                    <HeadingSmall
+                        title="Negative keywords summary"
+                        description="AI-synthesized profile of your negative keywords, used to reduce prompt size during analysis"
+                    />
+
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="ai_summary_model">Summary provider</Label>
+                            <Select v-model="form.ai_summary_model">
+                                <SelectTrigger id="ai_summary_model">
+                                    <SelectValue placeholder="Select provider" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem v-for="opt in summaryModelOptions" :key="opt.value" :value="opt.value">
+                                        {{ opt.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError :message="form.errors.ai_summary_model" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="ai_summary_model_name">Summary model</Label>
+                            <ModelSelect id="ai_summary_model_name" v-model="form.ai_summary_model_name" :models="availableSummaryModelNames" />
+                            <InputError :message="form.errors.ai_summary_model_name" />
+                        </div>
+                    </div>
+
+                    <!-- Summary metadata bar -->
+                    <div v-if="summaryMeta" class="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/50 px-4 py-3 text-sm">
+                        <span class="text-muted-foreground">Generated:</span>
+                        <span class="font-medium">{{ formatDate(summaryMeta.generated_at) }}</span>
+                        <span class="text-muted-foreground">|</span>
+                        <span class="text-muted-foreground">Keywords:</span>
+                        <span class="font-medium">{{ summaryMeta.keyword_count }}</span>
+                        <span class="text-muted-foreground">|</span>
+                        <span class="text-muted-foreground">Size:</span>
+                        <span class="font-medium">{{ formatBytes(summaryMeta.summary_size_bytes) }}</span>
+                        <span class="text-muted-foreground">|</span>
+                        <span class="text-muted-foreground">Model:</span>
+                        <span class="font-medium">{{ summaryMeta.model_used }}</span>
+                        <span
+                            v-if="summaryStale"
+                            class="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800"
+                        >
+                            Stale
+                        </span>
+                        <span
+                            v-else
+                            class="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                        >
+                            Current
+                        </span>
+                    </div>
+                    <div v-else class="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                        No summary generated yet. Click "Regenerate summary" to create one.
+                    </div>
+
+                    <!-- Summary preview (read-only) -->
+                    <div v-if="summaryText" class="grid gap-2">
+                        <Label>Current summary</Label>
+                        <Textarea
+                            :model-value="summaryText"
+                            rows="10"
+                            readonly
+                            class="bg-muted/30 font-mono text-xs"
+                        />
+                    </div>
+
+                    <!-- Regenerate button -->
+                    <div class="flex items-center gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            :disabled="regenerating"
+                            @click="regenerateSummary"
+                        >
+                            <template v-if="regenerating">
+                                <svg
+                                    class="-ml-1 mr-1.5 h-3.5 w-3.5 animate-spin"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                Generating...
+                            </template>
+                            <template v-else>Regenerate summary</template>
+                        </Button>
+                        <p v-if="regenerateError" class="text-sm text-red-600">{{ regenerateError }}</p>
                     </div>
                 </div>
 

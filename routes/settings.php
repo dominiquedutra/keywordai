@@ -29,4 +29,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('settings/openrouter-models', [GlobalSettingsController::class, 'fetchOpenRouterModels'])
         ->name('settings.openrouter-models');
+
+    Route::post('settings/regenerate-negatives-summary', [GlobalSettingsController::class, 'regenerateNegativesSummary'])
+        ->name('settings.regenerate-negatives-summary');
 });

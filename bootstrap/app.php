@@ -34,6 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
                  ->daily()
                  ->at('03:00')
                  ->onOneServer();
+
+        $schedule->command('keywordai:compile-negatives-summary')
+                 ->hourly()
+                 ->withoutOverlapping()
+                 ->onOneServer();
     })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

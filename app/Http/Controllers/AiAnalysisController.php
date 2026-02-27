@@ -5,28 +5,20 @@ namespace App\Http\Controllers;
 use App\Jobs\AddNegativeKeywordJob;
 use App\Models\SearchTerm;
 use App\Services\AiAnalysisService;
+use App\Services\NegativeKeywordsSummaryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AiAnalysisController extends Controller
 {
-    /**
-     * O serviço de análise de IA.
-     *
-     * @var \App\Services\AiAnalysisService
-     */
-    protected $aiAnalysisService;
+    protected AiAnalysisService $aiAnalysisService;
+    protected NegativeKeywordsSummaryService $summaryService;
 
-    /**
-     * Cria uma nova instância do controlador.
-     *
-     * @param \App\Services\AiAnalysisService $aiAnalysisService
-     * @return void
-     */
-    public function __construct(AiAnalysisService $aiAnalysisService)
+    public function __construct(AiAnalysisService $aiAnalysisService, NegativeKeywordsSummaryService $summaryService)
     {
         $this->aiAnalysisService = $aiAnalysisService;
+        $this->summaryService = $summaryService;
     }
 
     /**
@@ -137,14 +129,16 @@ class AiAnalysisController extends Controller
             ]);
         }
 
-        $negativeKeywords = $this->aiAnalysisService->collectNegativeKeywords();
         $positiveKeywords = $this->aiAnalysisService->collectPositiveKeywords();
+        $negativesSummary = $this->summaryService->getSummary() ?? '';
+        $negativesCompactList = $this->summaryService->getCompactKeywordList();
         $globalInstructions = setting('ai_global_custom_instructions', '');
         $modelSpecificInstructions = setting("ai_{$model}_custom_instructions", '');
 
         $prompt = $this->aiAnalysisService->buildPrompt(
-            $searchTerms, $negativeKeywords, $positiveKeywords,
-            $globalInstructions, $modelSpecificInstructions, $date
+            $searchTerms, $positiveKeywords,
+            $globalInstructions, $modelSpecificInstructions, $date,
+            $negativesSummary, $negativesCompactList
         );
 
         $modelName = setting("ai_{$model}_model") ?: config("ai.models.{$model}.model_name", $model);

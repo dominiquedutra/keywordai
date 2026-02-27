@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\AiAnalysisService;
+use App\Services\NegativeKeywordsSummaryService;
 use Illuminate\Console\Command;
 
 class AnalyzeTopSearchTermsCommand extends Command
@@ -27,23 +28,14 @@ class AnalyzeTopSearchTermsCommand extends Command
      */
     protected $description = 'Analisa os termos de pesquisa com status NONE de maior custo usando IA para identificar candidatos à negativação';
 
-    /**
-     * O serviço de análise de IA.
-     *
-     * @var \App\Services\AiAnalysisService
-     */
-    protected $aiAnalysisService;
+    protected AiAnalysisService $aiAnalysisService;
+    protected NegativeKeywordsSummaryService $summaryService;
 
-    /**
-     * Cria uma nova instância do comando.
-     *
-     * @param \App\Services\AiAnalysisService $aiAnalysisService
-     * @return void
-     */
-    public function __construct(AiAnalysisService $aiAnalysisService)
+    public function __construct(AiAnalysisService $aiAnalysisService, NegativeKeywordsSummaryService $summaryService)
     {
         parent::__construct();
         $this->aiAnalysisService = $aiAnalysisService;
+        $this->summaryService = $summaryService;
     }
 
     /**
@@ -68,14 +60,17 @@ class AnalyzeTopSearchTermsCommand extends Command
         try {
             // Obter o prompt para exibição, se solicitado
             if ($showPrompt) {
-                // Obter o prompt diretamente do serviço
+                $negativesSummary = $this->summaryService->getSummary() ?? '';
+                $negativesCompactList = $this->summaryService->getCompactKeywordList();
+
                 $prompt = $this->aiAnalysisService->buildPrompt(
                     $this->aiAnalysisService->collectSearchTerms(null, $limit, $filters),
-                    $this->aiAnalysisService->collectNegativeKeywords(),
                     $this->aiAnalysisService->collectPositiveKeywords(),
                     config('ai.instructions.global', ''),
                     config("ai.instructions.{$model}", ''),
-                    null
+                    null,
+                    $negativesSummary,
+                    $negativesCompactList
                 );
                 
                 $this->info("Prompt gerado:");

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\ActivityLog;
 use App\Models\NegativeKeyword;
+use App\Models\Setting;
 use App\Services\GoogleAdsQuotaService;
 use Google\Ads\GoogleAds\Lib\V20\GoogleAdsClient;
 use Google\Ads\GoogleAds\V20\Enums\KeywordMatchTypeEnum\KeywordMatchType;
@@ -205,6 +206,9 @@ class AddNegativeKeywordJob implements ShouldQueue
                     ]);
                     
                     Log::info("Registro criado na tabela negative_keywords com ID: {$negativeKeyword->id}");
+
+                    // Mark negatives summary as stale for regeneration
+                    Setting::setValue('ai_negatives_summary_stale', '1', 'boolean');
                     
                     // Registrar a atividade na tabela activity_logs
                     if ($this->userId) {

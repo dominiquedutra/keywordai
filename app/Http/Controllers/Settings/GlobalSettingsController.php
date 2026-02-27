@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\NegativeKeywordsSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,12 @@ class GlobalSettingsController extends Controller
                 'has_gemini_key' => !empty(Setting::getValue('ai_gemini_api_key')),
                 'has_openai_key' => !empty(Setting::getValue('ai_openai_api_key')),
                 'has_openrouter_key' => !empty(Setting::getValue('ai_openrouter_api_key')),
+                'ai_summary_model' => Setting::getValue('ai_summary_model', 'gemini'),
+                'ai_summary_model_name' => Setting::getValue('ai_summary_model_name', 'gemini-2.5-pro'),
+                'ai_gemini_max_output_tokens' => Setting::getValue('ai_gemini_max_output_tokens', '8192'),
+                'negatives_summary' => Setting::getValue('ai_negatives_summary', ''),
+                'negatives_summary_meta' => Setting::getValue('ai_negatives_summary_meta'),
+                'negatives_summary_stale' => (bool) Setting::getValue('ai_negatives_summary_stale', true),
             ],
         ]);
     }
@@ -52,6 +59,9 @@ class GlobalSettingsController extends Controller
             'ai_openai_custom_instructions' => ['nullable', 'string'],
             'ai_openrouter_custom_instructions' => ['nullable', 'string'],
             'ai_api_timeout' => ['required', 'integer', 'min:10', 'max:300'],
+            'ai_summary_model' => ['nullable', 'string', 'in:gemini,openai,openrouter'],
+            'ai_summary_model_name' => ['nullable', 'string', 'max:100'],
+            'ai_gemini_max_output_tokens' => ['nullable', 'integer', 'min:1024', 'max:65536'],
         ]);
 
         $encryptedKeys = ['ai_gemini_api_key', 'ai_openai_api_key', 'ai_openrouter_api_key'];
@@ -74,6 +84,20 @@ class GlobalSettingsController extends Controller
         }
 
         return redirect()->route('settings.global.index');
+    }
+
+    public function regenerateNegativesSummary(NegativeKeywordsSummaryService $summaryService): JsonResponse
+    {
+        $result = $summaryService->generate();
+
+        if (!$result['success']) {
+            return response()->json(['error' => $result['error']], 422);
+        }
+
+        return response()->json([
+            'summary' => $result['summary'],
+            'meta' => $result['meta'],
+        ]);
     }
 
     public function fetchOpenRouterModels(): JsonResponse
