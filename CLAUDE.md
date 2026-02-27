@@ -14,7 +14,7 @@ This repo previously had a key leak on a public GitHub repo, forcing a full repo
 
 ## Project Overview
 
-KeywordAI is an AI-powered Google Ads Search Term Management Platform. It syncs search terms from Google Ads, lets users analyze them with AI (Gemini, OpenAI, OpenRouter), and manage negative keywords — all self-hosted with SQLite.
+KeywordAI is an AI-powered Google Ads Search Term Management Platform. It syncs search terms from Google Ads, lets users analyze them with AI (Gemini, OpenAI, OpenRouter), and manage negative keywords — all self-hosted.
 
 ## Development Commands
 
@@ -50,15 +50,28 @@ docker compose -f docker-compose.dev.yml exec app php artisan tinker
 docker compose -f docker-compose.dev.yml down         # Stop
 
 # Note: Composer runs on host due to macOS Docker volume corruption issues
+```
 
-# Docker — Production (Cloudflare Tunnel connects to 127.0.0.1:8080)
-cp .env.prod.example .env                              # First time, then edit with real creds
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml down
+## Production Deployment
+
+Production runs on a **bare-metal DigitalOcean VPS** (NOT Docker). See `memory/production.md` for full details.
+
+```bash
+ssh deployer@192.34.63.220
+cd /var/www/keywordai
+git pull origin main
+composer install --no-dev
+npm install && npm run build
+php artisan migrate --force
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+sudo supervisorctl restart keywordai:*
 ```
 
 ## Architecture
+
+### Navigation: Universal Blade Top Navbar
+
+The app uses a **single server-rendered Blade top navbar** (`resources/views/components/navbar.blade.php`) that works identically on both Inertia and Blade pages. Both template roots (`app.blade.php` for Inertia, `layouts/app.blade.php` for Blade) include it via `@include('components.navbar')`. Menu items are organized into grouped dropdowns (Gestão, Monitoramento, Admin) with mobile hamburger support. The navbar only renders for authenticated users (`@auth`).
 
 ### Dual Rendering: Blade + Inertia/Vue
 
@@ -73,6 +86,7 @@ Most Google Ads operations happen through queued jobs, not synchronous requests:
 - **`SyncAdsEntitiesJob`** — Syncs campaigns and ad groups. Runs hourly via scheduler.
 - **`AddNegativeKeywordJob`** / **`AddKeywordToAdGroupJob`** — Mutates Google Ads via API.
 - **`SendNewSearchTermNotificationJob`** — Google Chat notifications for new terms.
+- **`BatchSyncSearchTermStatsJob`** — Batch stats sync for multiple terms.
 
 Jobs handle Google Ads quota exceeded errors by releasing back to queue with 60s delay. The `GoogleAdsQuotaService` enforces rate limits.
 
@@ -86,9 +100,18 @@ Jobs handle Google Ads quota exceeded errors by releasing back to queue with 60s
 ### AI Analysis
 
 Three AI providers configured in `config/ai.php` with API keys in `.env`:
+- **Gemini** (default): `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`
+- **OpenAI**: `gpt-4.1-nano`, `gpt-4.1-mini`, `gpt-4.1`, `gpt-4o`
+- **OpenRouter**: Any model via OpenRouter API
+
+Key features:
 - `AiAnalysisService` centralizes AI term analysis logic
-- Supports analysis by date or by top cost terms
+- Supports analysis by date or by top cost terms (up to 1000 terms)
+- Two-step UI flow: **preview** (instant prompt/size display) → **analyze** (AI call)
+- Preview endpoint (`POST /ai-analysis/preview`) builds prompt without calling AI
 - AI instructions (global + per-model) stored in `settings` DB table, editable at `/settings/global`
+- Model selection via curated dropdown lists in settings page (`resources/js/pages/settings/Global.vue`)
+- Configurable API timeout (10–300 seconds)
 
 ### Authentication & Security
 
@@ -117,18 +140,18 @@ Located in `app/Console/Commands/`. Notable:
 ### Route Structure
 
 - **Web routes** (`routes/web.php`) — Blade and Inertia pages, protected by `auth` middleware
-- **API routes** (`routes/api.php`) — REST API protected by `api_token` middleware
+- **API routes** (`routes/api.php`) — REST API protected by `api_token` middleware (30+ endpoints)
 - **Settings routes** (`routes/settings.php`) — User profile settings (Inertia)
-- Public: `/`, `/api/docs`, `/api/health`, `/api/info`
+- Public: `/`, `/api/docs`, `/api/health`, `/api/info`, `/docs/sistema`
 
 ## Tech Stack
 
-- **Backend**: PHP 8.2, Laravel 12, SQLite (default)
+- **Backend**: PHP 8.2, Laravel 12, SQLite (local dev), PostgreSQL (production)
 - **Frontend**: Vue 3 + TypeScript (Inertia pages), Blade + Tailwind CSS (legacy pages)
 - **UI Components**: shadcn/vue (reka-ui based) in `resources/js/components/ui/`
-- **Queue**: Database driver (default), Redis supported
+- **Queue**: Database driver (local dev), Beanstalkd (production)
 - **Build**: Vite with `@` alias → `resources/js/`
-- **Docker**: Separate dev (`docker-compose.dev.yml`) and prod (`docker-compose.prod.yml`) compose files. Dev includes Vite HMR + Mailpit. Prod binds to `127.0.0.1` for Cloudflare Tunnel.
+- **Docker**: Dev only (`docker-compose.dev.yml`) with Vite HMR + Mailpit. Production is bare-metal.
 
 ## Important Patterns
 
@@ -137,3 +160,4 @@ Located in `app/Console/Commands/`. Notable:
 - `SearchTermObserver` in `app/Observers/` watches for model events.
 - ESLint ignores `resources/js/components/ui/*` (auto-generated shadcn components).
 - No test suite exists yet — validation is manual via artisan commands and browser testing.
+- AI model names change frequently (preview versions get removed). Always use stable model IDs (e.g., `gemini-2.5-flash` not `gemini-2.5-flash-preview-*`).
