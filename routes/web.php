@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\NegativeKeywordController;
 use App\Http\Controllers\SearchTermController;
@@ -19,6 +20,10 @@ Route::get('/', function () {
 
 // Public API Documentation
 Route::get('/api/docs', [App\Http\Controllers\Api\ApiDocsController::class, 'index']);
+
+// Public Sistema Documentation
+Route::get('/docs/sistema', [DocsController::class, 'sistemaIndex'])->name('docs.sistema.index');
+Route::get('/docs/sistema/batch-stats-sync', [DocsController::class, 'batchStatsSync'])->name('docs.sistema.batch-stats-sync');
 
 // Incluir rotas de autenticação
 require __DIR__.'/auth.php';

@@ -32,12 +32,31 @@
                     <a href="{{ route('api.tokens.ui') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('api.tokens.*') ? 'border-indigo-500 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600' }}">
                         API Tokens
                     </a>
-                    <a href="/api/docs" target="_blank" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600">
-                        <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        Docs
-                    </a>
+                    <!-- Docs Dropdown -->
+                    <div class="relative inline-flex items-center docs-dropdown">
+                        <button class="docs-dropdown-btn inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 h-full">
+                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Docs
+                            <svg class="ml-1 h-4 w-4 transition-transform docs-dropdown-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="docs-dropdown-menu hidden absolute top-full left-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1">
+                                <a href="/api/docs" target="_blank" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    API
+                                    <svg class="w-3 h-3 ml-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                                <a href="{{ route('docs.sistema.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    Sistema
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="hidden sm:ml-6 sm:flex sm:items-center">
@@ -90,7 +109,10 @@
                 API Tokens
             </a>
             <a href="/api/docs" target="_blank" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600">
-                API Docs
+                Docs: API
+            </a>
+            <a href="{{ route('docs.sistema.index') }}" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600">
+                Docs: Sistema
             </a>
         </div>
     </div>
@@ -100,10 +122,30 @@
     document.addEventListener('DOMContentLoaded', function() {
         const mobileMenuButton = document.querySelector('.mobile-menu-button');
         const mobileMenu = document.querySelector('.mobile-menu');
-        
+
         if (mobileMenuButton && mobileMenu) {
             mobileMenuButton.addEventListener('click', function() {
                 mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Docs dropdown
+        const docsBtn = document.querySelector('.docs-dropdown-btn');
+        const docsMenu = document.querySelector('.docs-dropdown-menu');
+        const docsChevron = document.querySelector('.docs-dropdown-chevron');
+
+        if (docsBtn && docsMenu) {
+            docsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                docsMenu.classList.toggle('hidden');
+                docsChevron.classList.toggle('rotate-180');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.docs-dropdown')) {
+                    docsMenu.classList.add('hidden');
+                    docsChevron.classList.remove('rotate-180');
+                }
             });
         }
     });
