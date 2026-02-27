@@ -214,6 +214,7 @@ class SearchTermController extends Controller
             'adGroups' => $adGroups, // Passar a lista de grupos de anúncios para a view
             'perPage' => $perPage, // Pass the current per_page value
             'allowedPerPageValues' => $allowedPerPageValues, // Pass the allowed values
+            'defaultMatchType' => setting('negative_keyword_default_match_type', 'broad'),
         ]);
     }
 }

@@ -108,12 +108,36 @@
             {{ $searchTerms->appends(request()->query())->links() }}
         </div>
 
+        <!-- Batch Action Bar -->
+        <div id="batch-action-bar" class="hidden mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center justify-between">
+            <span class="text-sm text-amber-800 dark:text-amber-200">
+                <span id="selected-count" class="font-bold">0</span> termo(s) selecionado(s)
+            </span>
+            <button
+                id="batch-negate-button"
+                type="button"
+                class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 active:bg-amber-800 focus:outline-none focus:border-amber-800 focus:ring ring-amber-300 disabled:opacity-25 transition ease-in-out duration-150"
+                disabled
+            >
+                <span id="batch-negate-text">Negativar Rápido</span>
+                <span id="batch-negate-loading" class="hidden ml-2">
+                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </span>
+            </button>
+        </div>
+
         <!-- Tabela de Resultados -->
         <div class="bg-white dark:bg-gray-800 shadow overflow-hidden rounded-lg">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
+                            <th scope="col" class="w-10 px-2 py-3 text-center">
+                                <input type="checkbox" id="select-all-checkbox" class="rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500">
+                            </th>
                             <th scope="col" class="w-24 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Termo</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Campanha</th>
@@ -199,6 +223,9 @@
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse ($searchTerms as $term)
                             <tr>
+                                <td class="px-2 py-3 whitespace-nowrap text-center">
+                                    <input type="checkbox" class="term-checkbox rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500" data-term-id="{{ $term->id }}">
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center space-x-1">
                                     @php
                                         $dbAdGroup = \App\Models\AdGroup::where('google_ad_group_id', $term->ad_group_id)->first();
@@ -263,7 +290,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                <td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                     Nenhum termo de pesquisa encontrado com os filtros aplicados.
                                 </td>
                             </tr>
@@ -635,7 +662,7 @@
                         let targetRow = null;
 
                         for (const row of rows) {
-                            const termCell = row.cells[1];
+                            const termCell = row.cells[2];
                             if (termCell && termCell.textContent.trim() === modifiedTerm) {
                                 targetRow = row;
                                 break;
@@ -700,15 +727,109 @@
                 if (!row) return;
 
                 try {
-                    row.cells[6].textContent = data.formatted.impressions;
-                    row.cells[7].textContent = data.formatted.clicks;
-                    row.cells[8].textContent = data.formatted.cost;
-                    row.cells[9].textContent = data.formatted.ctr;
-                    row.cells[10].textContent = data.status;
+                    row.cells[7].textContent = data.formatted.impressions;
+                    row.cells[8].textContent = data.formatted.clicks;
+                    row.cells[9].textContent = data.formatted.cost;
+                    row.cells[10].textContent = data.formatted.ctr;
+                    row.cells[11].textContent = data.status;
                 } catch (error) {
                     console.error('Erro ao atualizar células:', error);
                 }
             }
+
+            // === Batch Negate (Negativar Rápido) ===
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const batchActionBar = document.getElementById('batch-action-bar');
+            const selectedCountEl = document.getElementById('selected-count');
+            const batchNegateButton = document.getElementById('batch-negate-button');
+            const batchNegateText = document.getElementById('batch-negate-text');
+            const batchNegateLoading = document.getElementById('batch-negate-loading');
+
+            function updateBatchBar() {
+                const checked = document.querySelectorAll('.term-checkbox:checked');
+                const count = checked.length;
+                selectedCountEl.textContent = count;
+                batchNegateButton.disabled = count === 0;
+                if (count > 0) {
+                    batchActionBar.classList.remove('hidden');
+                } else {
+                    batchActionBar.classList.add('hidden');
+                }
+                // Sync select-all checkbox state
+                const allCheckboxes = document.querySelectorAll('.term-checkbox');
+                selectAllCheckbox.checked = allCheckboxes.length > 0 && checked.length === allCheckboxes.length;
+                selectAllCheckbox.indeterminate = checked.length > 0 && checked.length < allCheckboxes.length;
+            }
+
+            selectAllCheckbox.addEventListener('change', function() {
+                document.querySelectorAll('.term-checkbox').forEach(cb => {
+                    cb.checked = selectAllCheckbox.checked;
+                });
+                updateBatchBar();
+            });
+
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('term-checkbox')) {
+                    updateBatchBar();
+                }
+            });
+
+            batchNegateButton.addEventListener('click', async function() {
+                const checked = document.querySelectorAll('.term-checkbox:checked');
+                if (checked.length === 0) return;
+
+                const terms = Array.from(checked).map(cb => ({
+                    id: parseInt(cb.getAttribute('data-term-id')),
+                    rationale: null
+                }));
+
+                batchNegateButton.disabled = true;
+                batchNegateText.textContent = 'Processando...';
+                batchNegateLoading.classList.remove('hidden');
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    const response = await fetch('/ai-analysis/negate', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            terms: terms,
+                            match_type: '{{ $defaultMatchType }}'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showNotification(data.message || `${terms.length} termo(s) negativado(s) com sucesso!`);
+                        // Uncheck all and hide bar
+                        document.querySelectorAll('.term-checkbox:checked').forEach(cb => {
+                            cb.checked = false;
+                            // Highlight the negated row
+                            const row = cb.closest('tr');
+                            if (row) row.classList.add('highlight-negated');
+                        });
+                        selectAllCheckbox.checked = false;
+                        selectAllCheckbox.indeterminate = false;
+                        updateBatchBar();
+                    } else {
+                        showNotification(data.message || 'Erro ao negativar termos.', true);
+                    }
+                } catch (error) {
+                    console.error('Erro ao negativar em lote:', error);
+                    showNotification('Erro ao negativar termos: ' + error.message, true);
+                } finally {
+                    batchNegateButton.disabled = false;
+                    batchNegateText.textContent = 'Negativar Rápido';
+                    batchNegateLoading.classList.add('hidden');
+                    updateBatchBar();
+                }
+            });
 
             function showNotification(message, isError = false) {
                 const notification = document.getElementById('notification');
