@@ -17,13 +17,20 @@
     ];
 @endphp
 
-{{-- Desktop Sidebar --}}
-<aside
-    id="sidebar"
-    data-state="{{ $collapsed ? 'collapsed' : 'expanded' }}"
-    class="sidebar-component hidden md:flex flex-col fixed inset-y-0 left-0 z-30 border-r transition-all duration-200 ease-in-out"
-    style="background: hsl(var(--sidebar-background)); color: hsl(var(--sidebar-foreground)); border-color: hsl(var(--sidebar-border));"
->
+{{-- Desktop Sidebar: wrapper with spacer + fixed sidebar (matches Vue inset variant) --}}
+<div id="sidebar-wrapper" class="hidden md:block" data-state="{{ $collapsed ? 'collapsed' : 'expanded' }}" data-variant="inset">
+    {{-- Spacer: takes up space in flex flow --}}
+    <div id="sidebar-spacer" class="relative h-svh bg-transparent transition-[width] duration-200 ease-linear"></div>
+
+    {{-- Fixed sidebar --}}
+    <aside
+        id="sidebar"
+        data-state="{{ $collapsed ? 'collapsed' : 'expanded' }}"
+        data-variant="inset"
+        class="sidebar-component fixed inset-y-0 left-0 z-10 hidden h-svh md:flex flex-col p-2 transition-[left,right,width] duration-200 ease-linear"
+        style="color: hsl(var(--sidebar-foreground));"
+    >
+  <div class="sidebar-inner flex h-full w-full flex-col" style="background: hsl(var(--sidebar-background)); border-radius: 0.5rem;">
     {{-- Header --}}
     <div class="flex h-12 items-center px-3 border-b" style="border-color: hsl(var(--sidebar-border));">
         <a href="/dashboard" class="flex items-center gap-2 overflow-hidden">
@@ -122,10 +129,12 @@
         </div>
     </div>
 
+  </div>{{-- end .sidebar-inner --}}
+
     {{-- Collapse toggle --}}
     <button
         id="sidebar-toggle"
-        class="absolute -right-3 top-3 z-40 flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+        class="absolute -right-3 top-5 z-40 flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
         title="Alternar barra lateral (Ctrl+B)"
     >
         <svg id="sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -134,6 +143,7 @@
         </svg>
     </button>
 </aside>
+</div>{{-- end #sidebar-wrapper --}}
 
 {{-- Mobile: hamburger trigger --}}
 <button
@@ -237,12 +247,21 @@
 </aside>
 
 <style>
-    /* Sidebar widths */
+    /* === Sidebar widths — matches Vue "inset" variant === */
+    /* Spacer (takes up flex space) */
+    #sidebar-spacer {
+        width: 16rem;
+    }
+    #sidebar-wrapper[data-state="collapsed"] #sidebar-spacer {
+        width: calc(3rem + 1rem); /* icon width + p-2 padding on both sides */
+    }
+
+    /* Fixed sidebar */
     #sidebar {
         width: 16rem;
     }
     #sidebar[data-state="collapsed"] {
-        width: 3rem;
+        width: calc(3rem + 1rem + 2px); /* icon + padding + border compensation */
     }
 
     /* Hide labels when collapsed */
@@ -264,25 +283,14 @@
         padding-right: 0;
     }
 
-    /* Sidebar accent colors via Tailwind utility classes */
-    .bg-sidebar-accent { background: hsl(var(--sidebar-accent)); }
-    .text-sidebar-accent-foreground { color: hsl(var(--sidebar-accent-foreground)); }
-    .text-sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
-    .hover\:bg-sidebar-accent:hover { background: hsl(var(--sidebar-accent)); }
-    .hover\:text-sidebar-accent-foreground:hover { color: hsl(var(--sidebar-accent-foreground)); }
-
-    /* Main content offset */
-    .sidebar-main-content {
-        margin-left: 16rem;
-        transition: margin-left 0.2s ease-in-out;
-    }
-    .sidebar-main-content.sidebar-collapsed {
-        margin-left: 3rem;
-    }
-
-    @media (max-width: 767px) {
+    /* === Main content — matches SidebarInset "inset" variant === */
+    @media (min-width: 768px) {
         .sidebar-main-content {
-            margin-left: 0 !important;
+            margin: 0.5rem; /* m-2 */
+            margin-left: 0; /* ml-0 — sidebar spacer handles left gap */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            min-height: calc(100svh - 1rem); /* 100svh minus top+bottom margin */
         }
     }
 </style>
@@ -290,7 +298,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.sidebar-main-content');
+    const sidebarWrapper = document.getElementById('sidebar-wrapper');
     const toggleBtn = document.getElementById('sidebar-toggle');
     const mobileTrigger = document.getElementById('mobile-sidebar-trigger');
     const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
@@ -298,19 +306,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileClose = document.getElementById('mobile-sidebar-close');
 
     // Desktop toggle
-    if (toggleBtn && sidebar) {
-        // Set initial main content class
-        if (sidebar.dataset.state === 'collapsed' && mainContent) {
-            mainContent.classList.add('sidebar-collapsed');
-        }
-
+    if (toggleBtn && sidebar && sidebarWrapper) {
         toggleBtn.addEventListener('click', function() {
             const isCollapsed = sidebar.dataset.state === 'collapsed';
-            sidebar.dataset.state = isCollapsed ? 'expanded' : 'collapsed';
-
-            if (mainContent) {
-                mainContent.classList.toggle('sidebar-collapsed', !isCollapsed);
-            }
+            const newState = isCollapsed ? 'expanded' : 'collapsed';
+            sidebar.dataset.state = newState;
+            sidebarWrapper.dataset.state = newState;
 
             // Persist to cookie (same key as Vue sidebar)
             document.cookie = 'sidebar_state=' + isCollapsed + '; path=/; max-age=604800';

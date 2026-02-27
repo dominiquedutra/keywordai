@@ -13,20 +13,22 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @yield('styles')
 </head>
-<body class="font-sans antialiased bg-background text-foreground">
-    @include('components.sidebar')
+<body class="font-sans antialiased bg-sidebar text-foreground">
+    <div class="flex min-h-svh w-full">
+        @include('components.sidebar')
 
-    <div class="sidebar-main-content min-h-screen {{ request()->cookie('sidebar_state', 'true') === 'false' ? 'sidebar-collapsed' : '' }}">
-        {{-- Top bar with mobile spacer --}}
-        <header class="flex h-12 items-center gap-2 border-b px-4 md:px-6">
-            <div class="md:hidden w-8"></div>{{-- spacer for mobile hamburger --}}
-            <nav class="flex items-center gap-1 text-sm text-muted-foreground">
-                @yield('breadcrumb')
-            </nav>
-        </header>
+        <div class="sidebar-main-content relative flex min-h-svh flex-1 flex-col bg-background">
+            {{-- Top bar with mobile spacer --}}
+            <header class="flex h-12 items-center gap-2 border-b px-4 md:px-6">
+                <div class="md:hidden w-8"></div>{{-- spacer for mobile hamburger --}}
+                <nav class="flex items-center gap-1 text-sm text-muted-foreground">
+                    @yield('breadcrumb')
+                </nav>
+            </header>
 
-        <div class="flex flex-1 flex-col p-4 md:p-6">
-            @yield('content')
+            <div class="flex flex-1 flex-col p-4 md:p-6">
+                @yield('content')
+            </div>
         </div>
     </div>
 
