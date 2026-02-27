@@ -1,56 +1,50 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>API Token Management - KeywordAI</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
-    @vite(['resources/css/app.css', 'resources/js/app.ts'])
-    <style>
-        .token-mask { 
-            font-family: monospace; 
-            letter-spacing: 0.05em;
-        }
-        .copy-btn {
-            transition: all 0.2s;
-        }
-        .copy-btn:hover {
-            transform: scale(1.05);
-        }
-        .permission-badge {
-            @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
-        }
-        .perm-read { @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200; }
-        .perm-write { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
-        .perm-sync { @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200; }
-        .perm-ai { @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200; }
-        .perm-admin { @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200; }
-        
-        .modal-enter {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        .modal-enter-active {
-            opacity: 1;
-            transform: scale(1);
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-        }
-        .modal-exit {
-            opacity: 1;
-            transform: scale(1);
-        }
-        .modal-exit-active {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.2s ease-in, transform 0.2s ease-in;
-        }
-    </style>
-</head>
-<body class="font-sans antialiased bg-gray-50 dark:bg-gray-900">
-    @include('components.main-navigation')
+@extends('layouts.app')
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+@section('title', 'API Token Management')
+
+@section('styles')
+<style>
+    .token-mask {
+        font-family: monospace;
+        letter-spacing: 0.05em;
+    }
+    .copy-btn {
+        transition: all 0.2s;
+    }
+    .copy-btn:hover {
+        transform: scale(1.05);
+    }
+    .permission-badge {
+        @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    }
+    .perm-read { @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200; }
+    .perm-write { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
+    .perm-sync { @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200; }
+    .perm-ai { @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200; }
+    .perm-admin { @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200; }
+
+    .modal-enter {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    .modal-enter-active {
+        opacity: 1;
+        transform: scale(1);
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+    .modal-exit {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .modal-exit-active {
+        opacity: 0;
+        transform: scale(0.95);
+        transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    }
+</style>
+@endsection
+
+@section('content')
         <!-- Header -->
         <div class="md:flex md:items-center md:justify-between mb-8">
             <div class="min-w-0 flex-1">
@@ -152,7 +146,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
                 <div class="p-5">
                     <div class="flex items-center">
@@ -350,7 +344,6 @@
                 <button onclick="copyExample()" class="ml-2 text-xs text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Copy</button>
             </div>
         </div>
-    </div>
 
     <!-- Create Token Modal -->
     <div id="create-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -374,7 +367,7 @@
                                         <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Token Name</label>
                                         <input type="text" name="name" id="name" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="e.g., Client XYZ Production">
                                     </div>
-                                    
+
                                     <div>
                                         <label for="created_by_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Assign to User (optional)</label>
                                         <select name="created_by_id" id="created_by_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -427,7 +420,9 @@
             </div>
         </div>
     </div>
+@endsection
 
+@section('scripts')
     <script>
         function openCreateModal() {
             document.getElementById('create-modal').classList.remove('hidden');
@@ -459,12 +454,10 @@
             setTimeout(() => btn.textContent = 'Copy', 2000);
         }
 
-        // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeCreateModal();
             }
         });
     </script>
-</body>
-</html>
+@endsection

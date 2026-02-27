@@ -1,26 +1,17 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>KeywordAI - Análise de Termos com IA</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
-    <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.ts'])
-</head>
-<body class="font-sans antialiased bg-gray-100 dark:bg-gray-900">
-    @include('components.main-navigation')
-    <div class="px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Análise de Termos de Pesquisa com IA</h1>
+@extends('layouts.app')
 
-        <!-- Estilos para destaque de linhas -->
-        <style>
-            .highlight-recommended {
-                background-color: rgba(239, 68, 68, 0.2); /* Vermelho claro com transparência */
-            }
-        </style>
+@section('title', 'Análise de Termos com IA')
+
+@section('styles')
+<style>
+    .highlight-recommended {
+        background-color: rgba(239, 68, 68, 0.2);
+    }
+</style>
+@endsection
+
+@section('content')
+        <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-200">Análise de Termos de Pesquisa com IA</h1>
 
         <!-- Formulário de Análise -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
@@ -182,7 +173,6 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            <!-- Os resultados serão inseridos aqui dinamicamente -->
                         </tbody>
                     </table>
                 </div>
@@ -219,43 +209,32 @@
                 </div>
             </div>
         </div>
-    </div>
+@endsection
 
-    <!-- Notificação de status -->
-    <div id="notification" class="fixed bottom-4 right-4 px-4 py-2 bg-gray-800 text-white rounded shadow-lg transform transition-opacity duration-300 opacity-0 pointer-events-none">
-        <span id="notification-message"></span>
-    </div>
-
-    <!-- CSRF Token para requisições AJAX -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    
+@section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos do formulário
             const analysisForm = document.getElementById('analysis-form');
             const analysisTypeRadios = document.querySelectorAll('input[name="analysis_type"]');
             const dateField = document.getElementById('date-field');
             const analyzeButton = document.getElementById('analyze-button');
             const analyzeText = document.getElementById('analyze-text');
             const analyzeLoading = document.getElementById('analyze-loading');
-            
-            // Elementos de resultados
+
             const resultsContainer = document.getElementById('results-container');
             const loadingContainer = document.getElementById('loading-container');
             const errorContainer = document.getElementById('error-container');
             const errorMessage = document.getElementById('error-message');
             const resultsTable = document.getElementById('results-table');
             const resultsTableBody = resultsTable.querySelector('tbody');
-            
-            // Elementos de métricas
+
             const modelUsed = document.getElementById('model-used');
             const responseTime = document.getElementById('response-time');
             const termsCount = document.getElementById('terms-count');
             const tokenUsage = document.getElementById('token-usage');
             const promptDetails = document.getElementById('prompt-details');
             const promptContent = document.getElementById('prompt-content');
-            
-            // Elementos de ações em lote
+
             const selectAllButton = document.getElementById('select-all-button');
             const selectRecommendedButton = document.getElementById('select-recommended-button');
             const negateSelectedButton = document.getElementById('negate-selected-button');
@@ -263,8 +242,7 @@
             const negateLoading = document.getElementById('negate-loading');
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
             const matchTypeSelect = document.getElementById('match_type');
-            
-            // Mostrar/ocultar o campo de data com base no tipo de análise
+
             analysisTypeRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     if (this.value === 'date') {
@@ -274,29 +252,22 @@
                     }
                 });
             });
-            
-            // Manipular o envio do formulário
+
             analysisForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
-                // Desabilitar o botão e mostrar o indicador de carregamento
+
                 analyzeButton.disabled = true;
                 analyzeText.classList.add('hidden');
                 analyzeLoading.classList.remove('hidden');
-                
-                // Esconder os resultados anteriores e mostrar o carregamento
+
                 resultsContainer.classList.add('hidden');
                 errorContainer.classList.add('hidden');
                 loadingContainer.classList.remove('hidden');
-                
-                // Obter os dados do formulário
+
                 const formData = new FormData(analysisForm);
-                
-                // Obter o token CSRF
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
+
                 try {
-                    // Enviar a requisição AJAX
                     const response = await fetch('{{ route("ai-analysis.analyze") }}', {
                         method: 'POST',
                         headers: {
@@ -306,17 +277,14 @@
                         },
                         body: formData
                     });
-                    
-                    // Processar a resposta
+
                     const data = await response.json();
-                    
+
                     if (response.ok && data.success) {
-                        // Preencher as métricas
                         modelUsed.textContent = `${data.metrics.model} (${data.metrics.model_name})`;
                         responseTime.textContent = `${data.metrics.duration} segundos`;
                         termsCount.textContent = `${data.data.length} termos`;
 
-                        // Token usage
                         if (data.metrics.usage) {
                             const u = data.metrics.usage;
                             tokenUsage.textContent = `${u.prompt_tokens.toLocaleString()} in + ${u.completion_tokens.toLocaleString()} out = ${u.total_tokens.toLocaleString()} tokens`;
@@ -324,27 +292,23 @@
                             tokenUsage.textContent = 'Não disponível';
                         }
 
-                        // Prompt enviado
                         if (data.metrics.prompt) {
                             promptContent.textContent = data.metrics.prompt;
                         }
-                        
-                        // Limpar a tabela de resultados
+
                         resultsTableBody.innerHTML = '';
-                        
-                        // Preencher a tabela de resultados
+
                         data.data.forEach(term => {
                             const row = document.createElement('tr');
-                            
-                            // Adicionar a classe de destaque se for recomendado para negativação
+
                             if (term.should_negate) {
                                 row.classList.add('highlight-recommended');
                             }
-                            
+
                             row.innerHTML = `
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
-                                    <input type="checkbox" class="term-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
-                                           data-term-id="${term.id}" 
+                                    <input type="checkbox" class="term-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                           data-term-id="${term.id}"
                                            data-rationale="${term.rationale.replace(/"/g, '&quot;')}"
                                            ${term.should_negate ? 'checked' : ''}>
                                 </td>
@@ -358,99 +322,85 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-semibold ${term.should_negate ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}">${term.should_negate ? 'SIM' : 'NÃO'}</td>
                                 <td class="px-4 py-3 whitespace-normal text-sm text-gray-500 dark:text-gray-400">${term.rationale}</td>
                             `;
-                            
+
                             resultsTableBody.appendChild(row);
                         });
-                        
-                        // Mostrar os resultados
+
                         loadingContainer.classList.add('hidden');
                         resultsContainer.classList.remove('hidden');
-                        
-                        // Atualizar o estado do botão de negativação
+
                         updateNegateButtonState();
                     } else {
-                        // Mostrar a mensagem de erro
                         errorMessage.textContent = data.message || 'Ocorreu um erro ao analisar os termos de pesquisa.';
                         loadingContainer.classList.add('hidden');
                         errorContainer.classList.remove('hidden');
                     }
                 } catch (error) {
                     console.error('Erro ao analisar termos:', error);
-                    
-                    // Mostrar a mensagem de erro
                     errorMessage.textContent = 'Ocorreu um erro ao analisar os termos de pesquisa. Por favor, tente novamente.';
                     loadingContainer.classList.add('hidden');
                     errorContainer.classList.remove('hidden');
                 } finally {
-                    // Reabilitar o botão e esconder o indicador de carregamento
                     analyzeButton.disabled = false;
                     analyzeText.classList.remove('hidden');
                     analyzeLoading.classList.add('hidden');
                 }
             });
-            
-            // Manipular o clique no botão "Selecionar Todos"
+
             selectAllButton.addEventListener('click', function() {
                 const checkboxes = document.querySelectorAll('.term-checkbox');
                 const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-                
+
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = !allChecked;
                 });
-                
+
                 selectAllCheckbox.checked = !allChecked;
                 updateNegateButtonState();
             });
-            
-            // Manipular o clique no checkbox "Selecionar Todos" no cabeçalho da tabela
+
             selectAllCheckbox.addEventListener('change', function() {
                 const checkboxes = document.querySelectorAll('.term-checkbox');
-                
+
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = this.checked;
                 });
-                
+
                 updateNegateButtonState();
             });
-            
-            // Manipular o clique no botão "Selecionar Recomendados"
+
             selectRecommendedButton.addEventListener('click', function() {
                 const rows = document.querySelectorAll('tbody tr');
-                
+
                 rows.forEach(row => {
                     const isRecommended = row.classList.contains('highlight-recommended');
                     const checkbox = row.querySelector('.term-checkbox');
-                    
+
                     if (checkbox) {
                         checkbox.checked = isRecommended;
                     }
                 });
-                
+
                 updateNegateButtonState();
             });
-            
-            // Manipular o clique nos checkboxes individuais
+
             resultsTableBody.addEventListener('change', function(e) {
                 if (e.target.classList.contains('term-checkbox')) {
                     updateNegateButtonState();
                 }
             });
-            
-            // Manipular o clique no botão "Negativar Selecionados"
+
             negateSelectedButton.addEventListener('click', async function() {
-                // Obter os termos selecionados
                 const selectedCheckboxes = document.querySelectorAll('.term-checkbox:checked');
-                
+
                 if (selectedCheckboxes.length === 0) {
                     return;
                 }
-                
-                // Desabilitar o botão e mostrar o indicador de carregamento
+
                 negateSelectedButton.disabled = true;
                 negateText.classList.add('hidden');
                 negateLoading.classList.remove('hidden');
-                
-                // Preparar os dados para enviar
+
                 const terms = [];
                 selectedCheckboxes.forEach(checkbox => {
                     terms.push({
@@ -458,15 +408,11 @@
                         rationale: checkbox.getAttribute('data-rationale')
                     });
                 });
-                
-                // Obter o tipo de correspondência selecionado
+
                 const matchType = matchTypeSelect.value;
-                
-                // Obter o token CSRF
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
+
                 try {
-                    // Enviar a requisição AJAX
                     const response = await fetch('{{ route("ai-analysis.negate") }}', {
                         method: 'POST',
                         headers: {
@@ -480,56 +426,42 @@
                             match_type: matchType
                         })
                     });
-                    
-                    // Processar a resposta
+
                     const data = await response.json();
-                    
+
                     if (response.ok && data.success) {
-                        // Exibir a notificação de sucesso
                         showNotification(data.message || 'Termos negativados com sucesso!');
-                        
-                        // Desmarcar os checkboxes
+
                         selectedCheckboxes.forEach(checkbox => {
                             checkbox.checked = false;
                         });
-                        
-                        // Desmarcar o checkbox "Selecionar Todos"
+
                         selectAllCheckbox.checked = false;
-                        
-                        // Atualizar o estado do botão de negativação
                         updateNegateButtonState();
                     } else {
-                        // Exibir a notificação de erro
                         showNotification(data.message || 'Erro ao negativar os termos selecionados.', true);
                     }
                 } catch (error) {
                     console.error('Erro ao negativar termos:', error);
-                    
-                    // Exibir a notificação de erro
                     showNotification('Erro ao negativar os termos selecionados. Por favor, tente novamente.', true);
                 } finally {
-                    // Reabilitar o botão e esconder o indicador de carregamento
                     negateSelectedButton.disabled = false;
                     negateText.classList.remove('hidden');
                     negateLoading.classList.add('hidden');
                 }
             });
-            
-            // Função para atualizar o estado do botão de negativação
+
             function updateNegateButtonState() {
                 const selectedCheckboxes = document.querySelectorAll('.term-checkbox:checked');
                 negateSelectedButton.disabled = selectedCheckboxes.length === 0;
             }
-            
-            // Função para exibir notificações
+
             function showNotification(message, isError = false) {
                 const notification = document.getElementById('notification');
                 const notificationMessage = document.getElementById('notification-message');
-                
-                // Define a mensagem
+
                 notificationMessage.textContent = message;
-                
-                // Aplica estilo baseado no tipo de notificação
+
                 if (isError) {
                     notification.classList.remove('bg-gray-800');
                     notification.classList.add('bg-red-600');
@@ -537,12 +469,10 @@
                     notification.classList.remove('bg-red-600');
                     notification.classList.add('bg-gray-800');
                 }
-                
-                // Exibe a notificação
+
                 notification.classList.remove('opacity-0');
                 notification.classList.add('opacity-100');
-                
-                // Esconde a notificação após 5 segundos
+
                 setTimeout(() => {
                     notification.classList.remove('opacity-100');
                     notification.classList.add('opacity-0');
@@ -550,5 +480,4 @@
             }
         });
     </script>
-</body>
-</html>
+@endsection

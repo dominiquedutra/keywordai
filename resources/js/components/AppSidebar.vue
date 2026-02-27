@@ -2,10 +2,10 @@
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Search, Ban, ClipboardList, Settings } from 'lucide-vue-next';
+import { BookOpen, LayoutGrid, Search, Sparkles, Ban, ClipboardList, Settings, Terminal, Key } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -20,6 +20,11 @@ const mainNavItems: NavItem[] = [
         icon: Search,
     },
     {
+        title: 'Análise IA',
+        href: '/ai-analysis',
+        icon: Sparkles,
+    },
+    {
         title: 'Palavras-chave Negativas',
         href: '/negative-keywords',
         icon: Ban,
@@ -29,14 +34,38 @@ const mainNavItems: NavItem[] = [
         href: '/activity-logs',
         icon: ClipboardList,
     },
+];
+
+const secondaryNavItems: NavItem[] = [
     {
-        title: 'Configurações Globais',
+        title: 'Configurações',
         href: '/settings/global',
         icon: Settings,
     },
+    {
+        title: 'Fila e Comandos',
+        href: '/queue-commands',
+        icon: Terminal,
+    },
+    {
+        title: 'API Tokens',
+        href: '/api-tokens',
+        icon: Key,
+    },
 ];
 
-const footerNavItems: NavItem[] = [];
+const footerNavItems: NavItem[] = [
+    {
+        title: 'Docs: API',
+        href: '/api/docs',
+        icon: BookOpen,
+    },
+    {
+        title: 'Docs: Sistema',
+        href: '/docs/sistema',
+        icon: BookOpen,
+    },
+];
 </script>
 
 <template>
@@ -55,6 +84,8 @@ const footerNavItems: NavItem[] = [];
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <SidebarSeparator />
+            <NavMain :items="secondaryNavItems" label="Administração" />
         </SidebarContent>
 
         <SidebarFooter>
