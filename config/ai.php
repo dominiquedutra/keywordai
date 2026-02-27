@@ -25,7 +25,7 @@ return [
     'models' => [
         'gemini' => [
             'api_key' => env('AI_GEMINI_API_KEY'),
-            'model_name' => env('AI_GEMINI_MODEL', 'gemini-2.5-flash-preview-04-17'),
+            'model_name' => env('AI_GEMINI_MODEL', 'gemini-2.5-flash'),
             'endpoint' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
         ],
         'openai' => [

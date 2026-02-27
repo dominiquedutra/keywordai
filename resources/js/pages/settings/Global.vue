@@ -69,7 +69,7 @@ const submit = () => {
 
 const geminiModels: ModelOption[] = [
     {
-        id: 'gemini-2.5-flash-lite-preview-06-17',
+        id: 'gemini-2.5-flash-lite',
         name: 'gemini-2.5-flash-lite',
         inputPrice: '0.10',
         outputPrice: '0.40',
