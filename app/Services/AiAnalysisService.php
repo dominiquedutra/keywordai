@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AiAnalysisLog;
 use App\Models\NegativeKeyword;
 use App\Models\SearchTerm;
 use Carbon\Carbon;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\Log;
 
 class AiAnalysisService
 {
+    private int $lastHttpStatus = 0;
+    private ?string $lastRawResponse = null;
+
     /**
      * Analisa termos de pesquisa com IA.
      *
@@ -18,10 +22,14 @@ class AiAnalysisService
      * @param int $limit Limite de termos a serem analisados
      * @param array $filters Filtros adicionais (min_impressions, min_clicks, min_cost)
      * @param Carbon|null $date Data específica para análise (null para análise por custo)
+     * @param array $context Contexto da chamada ['source' => 'web'|'api'|'cli', 'user_id' => int|null]
      * @return array Resultados da análise e métricas da API
      */
-    public function analyze(string $model, int $limit = 50, array $filters = [], ?Carbon $date = null): array
+    public function analyze(string $model, int $limit = 50, array $filters = [], ?Carbon $date = null, array $context = []): array
     {
+        $this->lastHttpStatus = 0;
+        $this->lastRawResponse = null;
+
         // Validar o modelo
         $validModels = ['gemini', 'openai', 'openrouter'];
         if (!in_array($model, $validModels)) {
@@ -37,7 +45,36 @@ class AiAnalysisService
         // Coletar termos de pesquisa
         $searchTerms = $this->collectSearchTerms($date, $limit, $filters);
 
+        // Obter nome exato do modelo (DB primeiro, .env fallback)
+        $modelName = setting("ai_{$model}_model") ?: config("ai.models.{$model}.model_name", $model);
+
+        // Build base log data
+        $logData = [
+            'user_id' => $context['user_id'] ?? null,
+            'source' => $context['source'] ?? 'unknown',
+            'analysis_type' => $date !== null ? 'date' : 'top',
+            'date_filter' => $date?->toDateString(),
+            'filters' => $filters,
+            'settings_snapshot' => [
+                'model_name' => $modelName,
+                'global_instructions' => setting('ai_global_custom_instructions', ''),
+                'model_instructions' => setting("ai_{$model}_custom_instructions", ''),
+                'api_timeout' => (int) setting('ai_api_timeout', 120),
+            ],
+            'model' => $model,
+            'model_name' => $modelName,
+            'term_limit' => $limit,
+            'terms_found' => $searchTerms->count(),
+            'prompt' => '',
+            'prompt_size' => 0,
+        ];
+
         if ($searchTerms->isEmpty()) {
+            $logData['reply_code'] = 0;
+            $logData['success'] = false;
+            $logData['error_message'] = 'Nenhum termo de pesquisa encontrado com os critérios especificados.';
+            $this->logAnalysis($logData);
+
             return [
                 'success' => false,
                 'message' => 'Nenhum termo de pesquisa encontrado com os critérios especificados.',
@@ -53,7 +90,7 @@ class AiAnalysisService
         // Obter instruções de IA (DB)
         $globalInstructions = setting('ai_global_custom_instructions', '');
         $modelSpecificInstructions = setting("ai_{$model}_custom_instructions", '');
-        
+
         // Construir o prompt
         $prompt = $this->buildPrompt(
             $searchTerms,
@@ -64,12 +101,12 @@ class AiAnalysisService
             $date
         );
 
-        // Obter nome exato do modelo (DB primeiro, .env fallback)
-        $modelName = setting("ai_{$model}_model") ?: config("ai.models.{$model}.model_name", $model);
+        $logData['prompt'] = $prompt;
+        $logData['prompt_size'] = strlen($prompt);
 
         // Chamar a API de IA e medir o tempo
         $startTime = microtime(true);
-        
+
         try {
             $apiResponse = $this->callAiApi($model, $apiKey, $prompt);
 
@@ -88,6 +125,16 @@ class AiAnalysisService
                 'usage' => $apiResponse['usage'],
             ];
 
+            // Log success
+            $logData['reply_code'] = $apiResponse['http_status'] ?? 200;
+            $logData['reply'] = $apiResponse['raw_response'] ?? null;
+            $logData['prompt_tokens'] = $apiResponse['usage']['prompt_tokens'] ?? null;
+            $logData['completion_tokens'] = $apiResponse['usage']['completion_tokens'] ?? null;
+            $logData['total_tokens'] = $apiResponse['usage']['total_tokens'] ?? null;
+            $logData['duration'] = $duration;
+            $logData['success'] = true;
+            $this->logAnalysis($logData);
+
             return [
                 'success' => true,
                 'message' => 'Análise concluída com sucesso.',
@@ -95,12 +142,23 @@ class AiAnalysisService
                 'metrics' => $metrics
             ];
         } catch (\Exception $e) {
+            $endTime = microtime(true);
+            $duration = round($endTime - $startTime, 2);
+
             Log::error("Erro na chamada à API de IA", [
                 'model' => $model,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
+            // Log failure
+            $logData['reply_code'] = $this->lastHttpStatus;
+            $logData['reply'] = $this->lastRawResponse;
+            $logData['duration'] = $duration;
+            $logData['success'] = false;
+            $logData['error_message'] = $e->getMessage();
+            $this->logAnalysis($logData);
+
             return [
                 'success' => false,
                 'message' => "Erro ao chamar a API de IA: " . $e->getMessage(),
@@ -121,28 +179,28 @@ class AiAnalysisService
     public function collectSearchTerms(?Carbon $date, int $limit, array $filters): Collection
     {
         $query = SearchTerm::query()->where('status', 'NONE');
-        
+
         // Filtrar por data ou ordenar por custo
         if ($date !== null) {
             $query->whereDate('first_seen_at', $date);
         } else {
             $query->orderBy('cost_micros', 'desc');
         }
-        
+
         // Aplicar filtros adicionais
         if (isset($filters['min_impressions']) && $filters['min_impressions'] > 0) {
             $query->where('impressions', '>=', $filters['min_impressions']);
         }
-        
+
         if (isset($filters['min_clicks']) && $filters['min_clicks'] > 0) {
             $query->where('clicks', '>=', $filters['min_clicks']);
         }
-        
+
         if (isset($filters['min_cost']) && $filters['min_cost'] > 0) {
             // Converter o custo de reais para micros (multiplicar por 1.000.000)
             $query->where('cost_micros', '>=', $filters['min_cost'] * 1000000);
         }
-        
+
         return $query->limit($limit)->get();
     }
 
@@ -190,21 +248,21 @@ class AiAnalysisService
         ?Carbon $date
     ): string {
         $prompt = "# Instruções\n\n";
-        
+
         // Adicionar instruções customizadas
         if (!empty($globalInstructions)) {
             $prompt .= "{$globalInstructions}\n\n";
         }
-        
+
         if (!empty($modelSpecificInstructions)) {
             $prompt .= "{$modelSpecificInstructions}\n\n";
         }
-        
+
         // Adicionar instruções padrão se não houver instruções customizadas
         if (empty($globalInstructions) && empty($modelSpecificInstructions)) {
             $prompt .= "Você é um especialista em análise de palavras-chave para Google Ads. Sua tarefa é analisar termos de pesquisa e determinar se eles devem ser negativados (adicionados como palavras-chave negativas) com base no contexto fornecido.\n\n";
             $prompt .= "Para cada termo de pesquisa, forneça uma análise concisa e um racional para negativação ou manutenção. Considere o contexto das palavras-chave negativas existentes e seus motivos, bem como as palavras-chave positivas já adicionadas.\n\n";
-            
+
             // Adicionar contexto específico com base no tipo de análise
             if ($date === null) {
                 $prompt .= "Os termos de pesquisa fornecidos são os que geraram maior custo e ainda não foram adicionados como palavras-chave positivas ou negativas (status NONE). Dê atenção especial à relação entre custo e desempenho.\n\n";
@@ -212,10 +270,10 @@ class AiAnalysisService
                 $prompt .= "Os termos de pesquisa fornecidos são os que apareceram na data {$date->format('Y-m-d')} e ainda não foram adicionados como palavras-chave positivas ou negativas (status NONE).\n\n";
             }
         }
-        
+
         // Adicionar contexto de palavras-chave negativas
         $prompt .= "# Palavras-chave Negativas Existentes\n\n";
-        
+
         if ($negativeKeywords->isEmpty()) {
             $prompt .= "Não há palavras-chave negativas existentes.\n\n";
         } else {
@@ -225,10 +283,10 @@ class AiAnalysisService
                 $prompt .= "  Motivo: {$reason}\n\n";
             }
         }
-        
+
         // Adicionar contexto de palavras-chave positivas
         $prompt .= "# Palavras-chave Positivas Existentes\n\n";
-        
+
         if ($positiveKeywords->isEmpty()) {
             $prompt .= "Não há palavras-chave positivas existentes.\n\n";
         } else {
@@ -237,17 +295,17 @@ class AiAnalysisService
             }
             $prompt .= "\n";
         }
-        
+
         // Adicionar termos de pesquisa para análise
         $prompt .= "# Termos de Pesquisa para Análise";
-        
+
         // Adicionar informação sobre ordenação se for análise por custo
         if ($date === null) {
             $prompt .= " (Ordenados por Custo)";
         }
-        
+
         $prompt .= "\n\n";
-        
+
         foreach ($searchTerms as $term) {
             $prompt .= "ID: {$term->id}\n";
             $prompt .= "Termo: \"{$term->search_term}\"\n";
@@ -258,7 +316,7 @@ class AiAnalysisService
             $prompt .= "Custo: " . number_format($term->cost_micros / 1000000, 2, ',', '.') . " R$\n";
             $prompt .= "CTR: {$term->ctr}%\n\n";
         }
-        
+
         // Adicionar instruções de formato de resposta
         $prompt .= "# Formato de Resposta\n\n";
         $prompt .= "Responda em formato JSON com a seguinte estrutura:\n\n";
@@ -274,7 +332,7 @@ class AiAnalysisService
         $prompt .= "]\n";
         $prompt .= "```\n\n";
         $prompt .= "Certifique-se de incluir todos os termos de pesquisa na resposta, ordenados por prioridade de negativação (os mais recomendados para negativar primeiro).\n";
-        
+
         return $prompt;
     }
 
@@ -313,7 +371,7 @@ class AiAnalysisService
     {
         $modelName = setting('ai_gemini_model') ?: config('ai.models.gemini.model_name', 'gemini-2.0-flash');
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent";
-        
+
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->timeout((int) setting('ai_api_timeout', 120))->withQueryParameters([
@@ -334,23 +392,26 @@ class AiAnalysisService
                 'topK' => 40,
             ]
         ]);
-        
+
+        $this->lastHttpStatus = $response->status();
+        $this->lastRawResponse = $response->body();
+
         if ($response->failed()) {
             throw new \Exception("Falha na chamada à API Gemini: " . $response->body());
         }
-        
+
         $data = $response->json();
-        
+
         // Extrair o texto da resposta
         if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
             throw new \Exception("Formato de resposta da API Gemini inesperado: " . json_encode($data));
         }
-        
+
         $responseText = $data['candidates'][0]['content']['parts'][0]['text'];
-        
+
         // Extrair o JSON da resposta (pode estar dentro de blocos de código)
         preg_match('/```json\s*(.*?)\s*```/s', $responseText, $matches);
-        
+
         if (isset($matches[1])) {
             $jsonText = $matches[1];
         } else {
@@ -362,11 +423,12 @@ class AiAnalysisService
                 $jsonText = $responseText; // Usar o texto completo como fallback
             }
         }
-        
+
         // Decodificar o JSON
         $result = json_decode($jsonText, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->lastHttpStatus = 900;
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
 
@@ -383,6 +445,8 @@ class AiAnalysisService
         return [
             'results' => $result,
             'usage' => $usage,
+            'http_status' => $response->status(),
+            'raw_response' => $responseText,
         ];
     }
 
@@ -397,7 +461,7 @@ class AiAnalysisService
     private function callOpenAiApi(string $apiKey, string $prompt): array
     {
         $url = 'https://api.openai.com/v1/chat/completions';
-        
+
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $apiKey,
@@ -415,23 +479,26 @@ class AiAnalysisService
             ],
             'temperature' => 0.2,
         ]);
-        
+
+        $this->lastHttpStatus = $response->status();
+        $this->lastRawResponse = $response->body();
+
         if ($response->failed()) {
             throw new \Exception("Falha na chamada à API OpenAI: " . $response->body());
         }
-        
+
         $data = $response->json();
-        
+
         // Extrair o texto da resposta
         if (!isset($data['choices'][0]['message']['content'])) {
             throw new \Exception("Formato de resposta da API OpenAI inesperado: " . json_encode($data));
         }
-        
+
         $responseText = $data['choices'][0]['message']['content'];
-        
+
         // Extrair o JSON da resposta (pode estar dentro de blocos de código)
         preg_match('/```json\s*(.*?)\s*```/s', $responseText, $matches);
-        
+
         if (isset($matches[1])) {
             $jsonText = $matches[1];
         } else {
@@ -443,11 +510,12 @@ class AiAnalysisService
                 $jsonText = $responseText; // Usar o texto completo como fallback
             }
         }
-        
+
         // Decodificar o JSON
         $result = json_decode($jsonText, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->lastHttpStatus = 900;
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
 
@@ -464,6 +532,8 @@ class AiAnalysisService
         return [
             'results' => $result,
             'usage' => $usage,
+            'http_status' => $response->status(),
+            'raw_response' => $responseText,
         ];
     }
 
@@ -497,6 +567,9 @@ class AiAnalysisService
             'temperature' => 0.2,
         ]);
 
+        $this->lastHttpStatus = $response->status();
+        $this->lastRawResponse = $response->body();
+
         if ($response->failed()) {
             throw new \Exception("Falha na chamada à API OpenRouter: " . $response->body());
         }
@@ -529,6 +602,7 @@ class AiAnalysisService
         $result = json_decode($jsonText, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->lastHttpStatus = 900;
             throw new \Exception("Erro ao decodificar JSON da resposta: " . json_last_error_msg() . "\nResposta: " . $responseText);
         }
 
@@ -545,6 +619,8 @@ class AiAnalysisService
         return [
             'results' => $result,
             'usage' => $usage,
+            'http_status' => $response->status(),
+            'raw_response' => $responseText,
         ];
     }
 
@@ -564,16 +640,16 @@ class AiAnalysisService
                 $resultsByTermId[$result['term_id']] = $result;
             }
         }
-        
+
         // Preparar os dados para a tabela
         $tableData = [];
         foreach ($searchTerms as $term) {
             $result = $resultsByTermId[$term->id] ?? null;
-            
+
             if ($result) {
                 $shouldNegate = $result['should_negate'] ?? false;
                 $rationale = $result['rationale'] ?? 'Sem análise disponível';
-                
+
                 $tableData[] = [
                     'id' => $term->id,
                     'search_term' => $term->search_term,
@@ -589,7 +665,7 @@ class AiAnalysisService
                 ];
             }
         }
-        
+
         // Ordenar por recomendação de negativação (SIM primeiro)
         usort($tableData, function ($a, $b) {
             if ($a['should_negate'] === $b['should_negate']) {
@@ -597,7 +673,7 @@ class AiAnalysisService
             }
             return $a['should_negate'] ? -1 : 1;
         });
-        
+
         return $tableData;
     }
 
@@ -650,5 +726,21 @@ class AiAnalysisService
             'summary' => $response['summary'] ?? 'Análise concluída',
             'terms_count' => count($terms),
         ];
+    }
+
+    /**
+     * Persists an analysis log entry. Wrapped in try/catch to never break main flow.
+     */
+    private function logAnalysis(array $data): void
+    {
+        try {
+            AiAnalysisLog::create(array_merge($data, [
+                'created_at' => now(),
+            ]));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to write AI analysis log', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

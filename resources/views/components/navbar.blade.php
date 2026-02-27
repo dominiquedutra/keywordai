@@ -7,6 +7,7 @@
 
     $monitoramentoItems = [
         ['label' => 'Log de Atividades', 'href' => '/activity-logs', 'route' => 'activity-logs.*', 'icon' => 'clipboard-list'],
+        ['label' => 'Log de Análise IA', 'href' => '/ai-analysis-logs', 'route' => 'ai-analysis-logs.*', 'icon' => 'brain'],
         ['label' => 'Fila e Comandos', 'href' => '/queue-commands', 'route' => 'queue-commands.*', 'icon' => 'terminal'],
     ];
 

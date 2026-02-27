@@ -104,7 +104,7 @@ class AnalyzeSearchTermsCommand extends Command
             }
 
             // Chamar o serviço para analisar os termos
-            $result = $this->aiAnalysisService->analyze($model, $limit, $filters, $parsedDate);
+            $result = $this->aiAnalysisService->analyze($model, $limit, $filters, $parsedDate, ['source' => 'cli']);
             
             if (!$result['success']) {
                 $this->info($result['message']);

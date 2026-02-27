@@ -29,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
                  ->everyTenMinutes()
                  ->withoutOverlapping()
                  ->onOneServer();
+
+        $schedule->command('keywordai:purge-ai-logs')
+                 ->daily()
+                 ->at('03:00')
+                 ->onOneServer();
     })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

@@ -93,7 +93,8 @@ class AiAnalysisController extends Controller
             $validated['model'],
             $validated['limit'],
             $filters,
-            $date
+            $date,
+            ['source' => 'web', 'user_id' => Auth::id()]
         );
 
         // Retornar os resultados como JSON

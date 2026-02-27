@@ -56,11 +56,13 @@ class AiAnalysisApiController extends BaseApiController
                 $date = Carbon::createFromFormat('Y-m-d', $validated['date']);
             }
 
+            $apiToken = $request->attributes->get('api_token');
             $result = $this->aiAnalysisService->analyze(
                 $validated['model'],
                 $limit,
                 $filters,
-                $date
+                $date,
+                ['source' => 'api', 'user_id' => $apiToken?->created_by_id]
             );
 
             return $this->successResponse(

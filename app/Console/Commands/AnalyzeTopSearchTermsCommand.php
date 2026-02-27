@@ -88,7 +88,7 @@ class AnalyzeTopSearchTermsCommand extends Command
             }
 
             // Chamar o serviço para analisar os termos
-            $result = $this->aiAnalysisService->analyze($model, $limit, $filters, null);
+            $result = $this->aiAnalysisService->analyze($model, $limit, $filters, null, ['source' => 'cli']);
             
             if (!$result['success']) {
                 $this->info($result['message']);

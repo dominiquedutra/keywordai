@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AiAnalysisLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\KeywordController;
@@ -60,6 +61,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ai-analysis/preview', [App\Http\Controllers\AiAnalysisController::class, 'preview'])->name('ai-analysis.preview');
     Route::post('/ai-analysis/analyze', [App\Http\Controllers\AiAnalysisController::class, 'analyze'])->name('ai-analysis.analyze');
     Route::post('/ai-analysis/negate', [App\Http\Controllers\AiAnalysisController::class, 'batchNegate'])->name('ai-analysis.negate');
+
+    // Rotas para logs de análise de IA
+    Route::get('/ai-analysis-logs', [AiAnalysisLogController::class, 'index'])->name('ai-analysis-logs.index');
+    Route::get('/ai-analysis-logs/{aiAnalysisLog}', [AiAnalysisLogController::class, 'show'])->name('ai-analysis-logs.show');
     
     // Rota para dados do gráfico do dashboard
     Route::get('/api/dashboard/new-terms-chart', [DashboardController::class, 'getNewTermsChartData'])->name('api.dashboard.new-terms-chart');
