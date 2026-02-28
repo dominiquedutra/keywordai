@@ -138,7 +138,7 @@
                             <th scope="col" class="w-10 px-2 py-3 text-center">
                                 <input type="checkbox" id="select-all-checkbox" class="rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500">
                             </th>
-                            <th scope="col" class="w-24 px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
+                            <th scope="col" class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Termo</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Campanha</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grupo Anúncios</th>
@@ -226,14 +226,14 @@
                                 <td class="px-2 py-3 whitespace-nowrap text-center">
                                     <input type="checkbox" class="term-checkbox rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500" data-term-id="{{ $term->id }}">
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-center space-x-1">
+                                <td class="px-2 py-2 whitespace-nowrap text-sm text-center space-x-0.5">
                                     @php
                                         $dbAdGroup = \App\Models\AdGroup::where('google_ad_group_id', $term->ad_group_id)->first();
                                         $dbAdGroupId = $dbAdGroup ? $dbAdGroup->id : null;
                                     @endphp
                                     <button
                                         type="button"
-                                        class="open-keyword-modal-button inline-flex items-center p-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        class="open-keyword-modal-button inline-flex items-center p-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
                                         data-action="add"
                                         data-term="{{ $term->search_term }}"
                                         data-match-type="exact"
@@ -244,13 +244,13 @@
                                         data-keyword-text="{{ $term->keyword_text }}"
                                         title="Adicionar Palavra-Chave"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                         </svg>
                                     </button>
                                     <button
                                         type="button"
-                                        class="open-keyword-modal-button inline-flex items-center p-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                        class="open-keyword-modal-button inline-flex items-center p-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500"
                                         data-action="negate"
                                         data-term="{{ $term->search_term }}"
                                         data-match-type="phrase"
@@ -261,17 +261,27 @@
                                         data-keyword-text="{{ $term->keyword_text }}"
                                         title="Adicionar Palavra-Chave Negativa"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                                         </svg>
                                     </button>
                                     <button
                                         type="button"
                                         data-term-id="{{ $term->id }}"
-                                        class="refresh-stats-button inline-flex items-center p-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                        class="fast-negate-row-button inline-flex items-center p-1 border border-transparent text-xs font-medium rounded text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-amber-500"
+                                        title="Negativar Rápido"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-term-id="{{ $term->id }}"
+                                        class="refresh-stats-button inline-flex items-center p-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-500"
                                         title="Atualizar estatísticas"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                     </button>
@@ -828,6 +838,51 @@
                     batchNegateText.textContent = 'Negativar Rápido';
                     batchNegateLoading.classList.add('hidden');
                     updateBatchBar();
+                }
+            });
+
+            // === Per-row Fast Negate ===
+            document.addEventListener('click', async function(e) {
+                const btn = e.target.closest('.fast-negate-row-button');
+                if (!btn) return;
+
+                e.preventDefault();
+                const termId = parseInt(btn.getAttribute('data-term-id'));
+
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+                const origHTML = btn.innerHTML;
+                btn.innerHTML = '<svg class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const response = await fetch('/ai-analysis/negate', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            terms: [{ id: termId, rationale: null }],
+                            match_type: '{{ $defaultMatchType }}'
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        showNotification(data.message || 'Termo negativado com sucesso!');
+                        const row = btn.closest('tr');
+                        if (row) row.classList.add('highlight-negated');
+                    } else {
+                        showNotification(data.message || 'Erro ao negativar termo.', true);
+                    }
+                } catch (error) {
+                    showNotification('Erro ao negativar termo: ' + error.message, true);
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                    btn.innerHTML = origHTML;
                 }
             });
 
