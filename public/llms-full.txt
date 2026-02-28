@@ -1,0 +1,772 @@
+# KeywordAI API — Full Reference
+
+> Complete API reference for LLM agents and programmatic integrations. All endpoints return JSON. Cost values are stored in micros (1 BRL = 1,000,000 micros).
+
+---
+
+## Authentication
+
+Token-based authentication required on all endpoints except `/api/health` and `/api/info`.
+
+### Methods (in order of preference)
+
+1. **Header (recommended)**: `X-API-Token: your_token_here`
+2. **Bearer**: `Authorization: Bearer your_token_here`
+3. **Query string**: `?api_token=your_token_here`
+
+### Permissions
+
+| Permission | Scope |
+|------------|-------|
+| `read` | All GET endpoints |
+| `write` | POST, PUT, PATCH endpoints |
+| `sync` | `/api/sync/*` endpoints |
+| `ai` | `/api/ai/*` endpoints |
+| `admin` | `/api/admin/*` endpoints |
+| `*` | All permissions |
+
+---
+
+## Response Format
+
+### Success (single resource)
+
+```json
+{
+  "success": true,
+  "message": "Description",
+  "data": { ... }
+}
+```
+
+### Success (paginated)
+
+```json
+{
+  "success": true,
+  "message": "Description",
+  "data": [ ... ],
+  "pagination": {
+    "current_page": 1,
+    "last_page": 10,
+    "per_page": 50,
+    "total": 500
+  }
+}
+```
+
+### Error
+
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errors": {
+    "field": ["Validation message"]
+  }
+}
+```
+
+---
+
+## LLM Agent Workflow
+
+This is the recommended workflow for LLM agents managing Google Ads search terms.
+
+### Step 1: Analyze search terms with AI
+
+```
+POST /api/ai/analyze
+Content-Type: application/json
+X-API-Token: your_token_here
+```
+
+Request body:
+
+```json
+{
+  "analysis_type": "date",
+  "date": "2026-02-27",
+  "model": "gemini",
+  "limit": 50,
+  "min_impressions": 10
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `analysis_type` | string | Yes | — | `date` (by date), `top` (by cost), `custom` (custom filters) |
+| `date` | date | If type=date | — | Date in Y-m-d format |
+| `model` | string | Yes | — | `gemini`, `openai`, or `openrouter` |
+| `limit` | int | No | 50 | Number of terms to analyze (1–200) |
+| `min_impressions` | int | No | 0 | Minimum impressions filter |
+| `min_clicks` | int | No | 0 | Minimum clicks filter |
+| `min_cost` | float | No | 0 | Minimum cost in BRL |
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 123,
+      "search_term": "example search query",
+      "impressions": 1500,
+      "clicks": 45,
+      "cost_micros": 25000000,
+      "cost_formatted": "R$ 25.00",
+      "ctr": 3.0,
+      "campaign_name": "Campaign Name",
+      "ad_group_name": "Ad Group Name",
+      "should_negate": true,
+      "rationale": "Term is irrelevant to the business"
+    }
+  ],
+  "metrics": {
+    "model": "gemini",
+    "model_name": "gemini-2.5-flash",
+    "duration": 2.5,
+    "usage": {
+      "prompt_tokens": 1500,
+      "completion_tokens": 800,
+      "total_tokens": 2300
+    }
+  }
+}
+```
+
+**Key fields per term:**
+- `should_negate` (boolean): AI recommendation to negate this term
+- `rationale` (string): AI explanation for the recommendation
+- `id` (integer): Use this to reference the term in batch-negate
+
+### Step 2: Filter terms to negate
+
+From the response, select terms where `should_negate === true`. Build an array of `{ "id": term.id, "rationale": term.rationale }`.
+
+### Step 3: Batch negate the selected terms
+
+```
+POST /api/search-terms/batch-negate
+Content-Type: application/json
+X-API-Token: your_token_here
+```
+
+Request body:
+
+```json
+{
+  "terms": [
+    { "id": 123, "rationale": "Term is irrelevant to the business" },
+    { "id": 456, "rationale": "Competitor brand name" }
+  ],
+  "match_type": "phrase"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `terms` | array | Yes | Array of objects with `id` (required) and `reason` or `rationale` (optional) |
+| `terms[].id` | int | Yes | Search term ID (must exist) |
+| `terms[].reason` | string | No | Reason for negation |
+| `terms[].rationale` | string | No | Alternative field name for reason (from AI analysis output) |
+| `match_type` | string | Yes | `exact`, `phrase`, or `broad` |
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "3 termo(s) adicionado(s) à fila.",
+  "data": [
+    { "id": 123, "search_term": "example query", "status": "queued" },
+    { "id": 456, "search_term": "competitor brand", "status": "queued" }
+  ]
+}
+```
+
+### Alternative: Auto-negate via AI suggestions
+
+For a single-step workflow, use the suggest-negatives endpoint with `auto_negate: true`:
+
+```
+POST /api/ai/suggest-negatives
+Content-Type: application/json
+X-API-Token: your_token_here
+```
+
+```json
+{
+  "model": "gemini",
+  "date_from": "2026-02-20",
+  "date_to": "2026-02-27",
+  "min_impressions": 50,
+  "limit": 100,
+  "auto_negate": true,
+  "match_type": "phrase"
+}
+```
+
+---
+
+## All Endpoints
+
+### Health & Info (Public — no auth required)
+
+#### GET `/api/health`
+
+Check API and component health.
+
+Response:
+
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "timestamp": "2026-02-27T14:30:00Z",
+  "checks": {
+    "database": { "status": "ok", "message": "Database connection successful" },
+    "queue": { "status": "ok", "message": "Queue operational", "pending_jobs": 0 },
+    "google_ads_config": { "status": "ok", "message": "Google Ads configuration found" }
+  }
+}
+```
+
+#### GET `/api/info`
+
+API version and feature flags.
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "KeywordAI API",
+    "version": "1.0.0",
+    "environment": "production",
+    "features": {
+      "search_terms": true,
+      "campaigns": true,
+      "negative_keywords": true,
+      "sync": true,
+      "ai_analysis": true
+    }
+  }
+}
+```
+
+---
+
+### Dashboard (Permission: `read`)
+
+#### GET `/api/dashboard/metrics`
+
+Dashboard metrics and statistics.
+
+#### GET `/api/dashboard/chart/new-terms`
+
+New terms chart data.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `days` | int | 30 | Period in days (7–90) |
+
+#### GET `/api/dashboard/top-terms`
+
+Top search terms by metric.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `limit` | int | 10 | Number of results (1–100) |
+| `sort_by` | string | impressions | Sort field: `impressions`, `clicks`, `cost_micros`, `ctr` |
+
+#### GET `/api/dashboard/activity`
+
+Recent activity (new terms and negated keywords).
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `limit` | int | 20 | Number of results (1–100) |
+
+---
+
+### Search Terms (Permission: `read` for GET, `write` for POST)
+
+#### GET `/api/search-terms`
+
+List search terms with filtering and pagination.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `search_term` | string | — | Filter by term (LIKE match) |
+| `campaign_id` | int | — | Filter by campaign ID |
+| `campaign_name` | string | — | Filter by campaign name (LIKE) |
+| `ad_group_id` | int | — | Filter by ad group ID |
+| `status` | string | — | Filter: `NONE`, `ADDED`, `EXCLUDED` |
+| `match_type` | string | — | Filter by match type |
+| `min_impressions` | int | — | Minimum impressions |
+| `min_clicks` | int | — | Minimum clicks |
+| `min_cost` | float | — | Minimum cost in BRL (converted to micros internally) |
+| `date_from` | date | — | Start date (Y-m-d) |
+| `date_to` | date | — | End date (Y-m-d) |
+| `sort_by` | string | first_seen_at | Sort: `impressions`, `clicks`, `cost_micros`, `first_seen_at`, `created_at`, `search_term` |
+| `sort_direction` | string | desc | `asc` or `desc` |
+| `per_page` | int | 50 | Items per page (1–1000) |
+
+Response data item:
+
+```json
+{
+  "id": 1,
+  "search_term": "example search",
+  "keyword_text": "example",
+  "match_type": "BROAD",
+  "status": "NONE",
+  "impressions": 1500,
+  "clicks": 45,
+  "cost_micros": 25000000,
+  "cost_formatted": "R$ 25.00",
+  "ctr": 3.0,
+  "ctr_formatted": "3.00%",
+  "campaign": { "id": 1234567890, "name": "Campaign Name" },
+  "ad_group": { "id": 9876543210, "name": "Ad Group Name" },
+  "first_seen_at": "2026-02-27",
+  "statistics_synced_at": "2026-02-27 10:30:00"
+}
+```
+
+#### GET `/api/search-terms/stats`
+
+Aggregated statistics.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `date_from` | date | — | Start date (Y-m-d) |
+| `date_to` | date | — | End date (Y-m-d) |
+
+#### GET `/api/search-terms/{id}`
+
+Get a single search term by ID.
+
+#### POST `/api/search-terms/{id}/refresh`
+
+Refresh stats for a single term (synchronous Google Ads API call).
+
+#### POST `/api/search-terms/{id}/negate`
+
+Negate a single search term (queued).
+
+```json
+{
+  "match_type": "phrase",
+  "reason": "Irrelevant term"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `match_type` | string | Yes | `exact`, `phrase`, or `broad` |
+| `reason` | string | No | Reason for negation (max 1000 chars) |
+
+#### POST `/api/search-terms/{id}/add-positive`
+
+Add a term as a positive keyword to an ad group (queued).
+
+```json
+{
+  "ad_group_id": 123,
+  "match_type": "exact"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ad_group_id` | int | Yes | Ad group ID (must exist in database) |
+| `match_type` | string | Yes | `exact`, `phrase`, or `broad` |
+
+#### POST `/api/search-terms/batch-negate`
+
+Negate multiple terms at once (queued). See [LLM Agent Workflow](#llm-agent-workflow) for detailed usage.
+
+```json
+{
+  "terms": [
+    { "id": 1, "reason": "Irrelevant" },
+    { "id": 2, "rationale": "Competitor" }
+  ],
+  "match_type": "phrase"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `terms` | array | Yes | Array of `{ id, reason/rationale }` |
+| `terms[].id` | int | Yes | Search term ID |
+| `terms[].reason` | string | No | Reason for negation |
+| `terms[].rationale` | string | No | Alternative field for reason |
+| `match_type` | string | Yes | `exact`, `phrase`, or `broad` |
+
+---
+
+### Campaigns (Permission: `read`)
+
+#### GET `/api/campaigns`
+
+List all campaigns.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `status` | string | — | Filter by status |
+| `name` | string | — | Search by name (LIKE) |
+| `channel_type` | string | — | Channel type |
+| `active_only` | bool | — | Active campaigns only |
+| `sort_by` | string | name | Sort field |
+| `sort_direction` | string | asc | `asc` or `desc` |
+| `per_page` | int | 50 | Items per page (1–500) |
+
+#### GET `/api/campaigns/{id}`
+
+Campaign details (includes related ad groups).
+
+#### GET `/api/campaigns/{id}/ad-groups`
+
+Ad groups for a campaign.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `active_only` | bool | — | Active only |
+| `per_page` | int | 50 | Items per page (1–500) |
+
+#### GET `/api/campaigns/{id}/search-terms`
+
+Search terms for a campaign.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `per_page` | int | 50 | Items per page (1–1000) |
+
+#### GET `/api/campaigns/{id}/stats`
+
+Campaign statistics: ad group count, term count, impressions, clicks, cost, CTR.
+
+---
+
+### Ad Groups (Permission: `read`)
+
+#### GET `/api/ad-groups`
+
+List all ad groups.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `campaign_id` | int | — | Filter by Google Ads campaign ID |
+| `status` | string | — | Filter by status |
+| `name` | string | — | Search by name (LIKE) |
+| `active_only` | bool | — | Active only |
+| `sort_by` | string | name | Sort field |
+| `sort_direction` | string | asc | `asc` or `desc` |
+| `per_page` | int | 50 | Items per page (1–500) |
+
+#### GET `/api/ad-groups/{id}`
+
+Ad group details (includes related campaign).
+
+#### GET `/api/ad-groups/{id}/search-terms`
+
+Search terms for an ad group.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `per_page` | int | 50 | Items per page (1–1000) |
+
+---
+
+### Negative Keywords (Permission: `read` for GET, `write` for POST)
+
+#### GET `/api/negative-keywords`
+
+List negative keywords.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `keyword` | string | — | Search by keyword (LIKE) |
+| `match_type` | string | — | Filter: `exact`, `phrase`, `broad` |
+| `list_id` | string | — | Filter by list ID |
+| `created_by` | int | — | Filter by creator ID |
+| `sort_by` | string | created_at | Sort field |
+| `sort_direction` | string | desc | `asc` or `desc` |
+| `per_page` | int | 50 | Items per page (1–1000) |
+
+#### GET `/api/negative-keywords/stats`
+
+Negative keyword statistics: total, by match type, by list, last 7 days.
+
+#### GET `/api/negative-keywords/{id}`
+
+Negative keyword details.
+
+#### POST `/api/negative-keywords`
+
+Create a negative keyword (queued to Google Ads).
+
+```json
+{
+  "keyword": "negative term",
+  "match_type": "phrase",
+  "reason": "Irrelevant",
+  "list_id": "1234567890"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `keyword` | string | Yes | Keyword text (max 255 chars) |
+| `match_type` | string | Yes | `exact`, `phrase`, or `broad` |
+| `reason` | string | No | Reason (max 1000 chars) |
+| `list_id` | string | No | Negative list ID (defaults to global config) |
+
+#### POST `/api/negative-keywords/batch`
+
+Create multiple negative keywords at once.
+
+```json
+{
+  "keywords": [
+    { "keyword": "term1", "match_type": "broad", "reason": "Reason 1" },
+    { "keyword": "term2", "match_type": "exact", "reason": "Reason 2" }
+  ],
+  "list_id": "1234567890"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `keywords` | array | Yes | Array of `{ keyword, match_type, reason }` |
+| `list_id` | string | No | Negative list ID (defaults to global config) |
+
+---
+
+### Sync Operations (Permission: `sync`)
+
+#### POST `/api/sync/search-terms`
+
+Sync search terms for a specific date (queued).
+
+```json
+{ "date": "2026-02-27" }
+```
+
+#### POST `/api/sync/search-terms-range`
+
+Sync search terms for a date range (one job per day).
+
+```json
+{
+  "date_from": "2026-02-20",
+  "date_to": "2026-02-27"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `date_from` | date | Yes | Start date (Y-m-d) |
+| `date_to` | date | Yes | End date (Y-m-d, must be >= date_from) |
+
+#### POST `/api/sync/entities`
+
+Sync campaigns and ad groups from Google Ads (queued).
+
+#### GET `/api/sync/status`
+
+Sync status history.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `date_from` | date | — | Start date |
+| `date_to` | date | — | End date |
+| `status` | string | — | Filter: `pending`, `processing`, `completed`, `failed` |
+| `per_page` | int | 30 | Items per page (1–100) |
+
+#### GET `/api/sync/queue-status`
+
+Queue processing status: pending jobs, failed jobs, last 10 jobs.
+
+---
+
+### AI Analysis (Permission: `ai`)
+
+#### GET `/api/ai/models`
+
+Available AI models and their status.
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "gemini": { "name": "Gemini (Google)", "model": "gemini-2.5-flash", "available": true },
+    "openai": { "name": "OpenAI (GPT)", "model": "gpt-4o", "available": false },
+    "openrouter": { "name": "OpenRouter", "model": "google/gemini-2.0-flash-001", "available": true }
+  }
+}
+```
+
+#### POST `/api/ai/analyze`
+
+Analyze search terms with AI. See [LLM Agent Workflow](#llm-agent-workflow) for detailed usage.
+
+#### POST `/api/ai/suggest-negatives`
+
+AI-powered negative keyword suggestions with optional auto-negation.
+
+```json
+{
+  "model": "gemini",
+  "date_from": "2026-02-20",
+  "date_to": "2026-02-27",
+  "min_impressions": 50,
+  "limit": 100,
+  "auto_negate": true,
+  "match_type": "phrase"
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `model` | string | Yes | — | `gemini`, `openai`, or `openrouter` |
+| `date_from` | date | No | — | Start date (Y-m-d) |
+| `date_to` | date | No | — | End date (Y-m-d) |
+| `min_impressions` | int | No | 0 | Minimum impressions |
+| `limit` | int | No | 50 | Number of terms (1–100) |
+| `auto_negate` | bool | No | false | Automatically negate suggested terms |
+| `match_type` | string | If auto_negate | — | `exact`, `phrase`, or `broad` |
+
+---
+
+### Token Management
+
+#### GET `/api/token/me` (Permission: any token)
+
+Current token info.
+
+#### GET `/api/admin/tokens` (Permission: `admin`)
+
+List all tokens.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `is_active` | bool | — | Filter by active/inactive |
+| `sort_by` | string | created_at | Sort field |
+| `sort_direction` | string | desc | `asc` or `desc` |
+| `per_page` | int | 20 | Items per page (1–100) |
+
+#### POST `/api/admin/tokens` (Permission: `admin`)
+
+Create a new token. The full token is only returned at creation time.
+
+```json
+{
+  "name": "LLM Agent Token",
+  "expires_in_days": 90,
+  "permissions": ["read", "write", "ai"]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | No | Descriptive name |
+| `expires_in_days` | int | No | Days until expiry (1–365) |
+| `permissions` | array | No | `read`, `write`, `sync`, `ai`, `admin` |
+
+#### GET `/api/admin/tokens/{id}` (Permission: `admin`)
+
+Token details.
+
+#### PUT `/api/admin/tokens/{id}` (Permission: `admin`)
+
+Update a token.
+
+```json
+{
+  "name": "Updated name",
+  "is_active": false,
+  "permissions": ["read"]
+}
+```
+
+#### DELETE `/api/admin/tokens/{id}` (Permission: `admin`)
+
+Revoke a token (sets `is_active=false`).
+
+---
+
+## Endpoint Summary
+
+| # | Method | Endpoint | Auth | Description |
+|---|--------|----------|------|-------------|
+| 1 | GET | `/api/health` | Public | Health check |
+| 2 | GET | `/api/info` | Public | API info |
+| 3 | GET | `/api/dashboard/metrics` | read | Dashboard metrics |
+| 4 | GET | `/api/dashboard/chart/new-terms` | read | New terms chart |
+| 5 | GET | `/api/dashboard/top-terms` | read | Top terms |
+| 6 | GET | `/api/dashboard/activity` | read | Recent activity |
+| 7 | GET | `/api/search-terms` | read | List search terms |
+| 8 | GET | `/api/search-terms/stats` | read | Term statistics |
+| 9 | GET | `/api/search-terms/{id}` | read | Term details |
+| 10 | POST | `/api/search-terms/{id}/refresh` | write | Refresh term stats |
+| 11 | POST | `/api/search-terms/{id}/negate` | write | Negate term |
+| 12 | POST | `/api/search-terms/{id}/add-positive` | write | Add as positive |
+| 13 | POST | `/api/search-terms/batch-negate` | write | Batch negate |
+| 14 | GET | `/api/campaigns` | read | List campaigns |
+| 15 | GET | `/api/campaigns/{id}` | read | Campaign details |
+| 16 | GET | `/api/campaigns/{id}/ad-groups` | read | Campaign ad groups |
+| 17 | GET | `/api/campaigns/{id}/search-terms` | read | Campaign terms |
+| 18 | GET | `/api/campaigns/{id}/stats` | read | Campaign stats |
+| 19 | GET | `/api/ad-groups` | read | List ad groups |
+| 20 | GET | `/api/ad-groups/{id}` | read | Ad group details |
+| 21 | GET | `/api/ad-groups/{id}/search-terms` | read | Ad group terms |
+| 22 | GET | `/api/negative-keywords` | read | List negatives |
+| 23 | GET | `/api/negative-keywords/stats` | read | Negative stats |
+| 24 | GET | `/api/negative-keywords/{id}` | read | Negative details |
+| 25 | POST | `/api/negative-keywords` | write | Create negative |
+| 26 | POST | `/api/negative-keywords/batch` | write | Batch create negatives |
+| 27 | POST | `/api/sync/search-terms` | sync | Sync by date |
+| 28 | POST | `/api/sync/search-terms-range` | sync | Sync date range |
+| 29 | POST | `/api/sync/entities` | sync | Sync campaigns/groups |
+| 30 | GET | `/api/sync/status` | sync | Sync status |
+| 31 | GET | `/api/sync/queue-status` | sync | Queue status |
+| 32 | GET | `/api/ai/models` | ai | Available models |
+| 33 | POST | `/api/ai/analyze` | ai | AI analysis |
+| 34 | POST | `/api/ai/suggest-negatives` | ai | AI suggestions |
+| 35 | GET | `/api/token/me` | any | Current token info |
+| 36 | GET | `/api/admin/tokens` | admin | List tokens |
+| 37 | POST | `/api/admin/tokens` | admin | Create token |
+| 38 | GET | `/api/admin/tokens/{id}` | admin | Token details |
+| 39 | PUT | `/api/admin/tokens/{id}` | admin | Update token |
+| 40 | DELETE | `/api/admin/tokens/{id}` | admin | Revoke token |
+
+**Total: 40 endpoints** (2 public, 33 authenticated, 5 admin)
+
+---
+
+## Error Codes
+
+| Code | Meaning |
+|------|---------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad request — invalid parameters |
+| 401 | Unauthorized — invalid or missing token |
+| 403 | Forbidden — insufficient permissions |
+| 404 | Not found |
+| 422 | Validation error (details in `errors` field) |
+| 500 | Internal server error |
+| 503 | Service unavailable |
+
+## Rate Limits
+
+- **Google Ads API**: 14,000 requests/day, 60 requests/minute
+- **KeywordAI API**: No specific limits (constrained by Google Ads quotas and server capacity)

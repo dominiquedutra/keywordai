@@ -200,6 +200,7 @@ class SearchTermApiController extends BaseApiController
             'terms' => 'required|array',
             'terms.*.id' => 'required|integer|exists:search_terms,id',
             'terms.*.reason' => 'nullable|string',
+            'terms.*.rationale' => 'nullable|string',
             'match_type' => 'required|in:exact,phrase,broad',
         ]);
 
@@ -222,7 +223,7 @@ class SearchTermApiController extends BaseApiController
                     $searchTerm->search_term,
                     $listId,
                     $matchType,
-                    $term['rationale'] ?? null,
+                    $term['reason'] ?? $term['rationale'] ?? null,
                     $userId
                 );
                 

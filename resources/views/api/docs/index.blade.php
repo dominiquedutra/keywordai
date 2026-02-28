@@ -51,6 +51,8 @@
                     </a>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <a href="{{ url('/llms.txt') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">llms.txt</a>
+                    <a href="{{ url('/llms-full.txt') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">llms-full.txt</a>
                     <a href="{{ url('/api/health') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Health Check</a>
                     <a href="{{ url('/api/info') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">API Info</a>
                     @auth
@@ -88,6 +90,11 @@
                         <li><a href="#negative-keywords" class="nav-link">Negative Keywords</a></li>
                         <li><a href="#sync" class="nav-link">Sync Operations</a></li>
                         <li><a href="#ai" class="nav-link">AI Analysis</a></li>
+                    </ul>
+
+                    <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Integrations</h5>
+                    <ul class="space-y-1 mb-6">
+                        <li><a href="#llm-integration" class="nav-link">LLM Integration</a></li>
                     </ul>
 
                     <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Reference</h5>
@@ -649,6 +656,89 @@ Authorization: Bearer your_token_here</code></pre>
   "auto_negate": true,
   "match_type": "phrase"
 }</code></pre>
+                                <button onclick="copyCode(this)" class="copy-btn">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LLM Integration -->
+                <section id="llm-integration" class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">LLM Integration</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">
+                        KeywordAI provides machine-readable documentation following the <a href="https://llmstxt.org/" class="text-indigo-600 hover:text-indigo-500" target="_blank">llms.txt standard</a> for LLM agents that need to programmatically manage search terms.
+                    </p>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
+                        <h3 class="text-indigo-900 dark:text-indigo-200 font-semibold mb-2">Machine-Readable Docs</h3>
+                        <ul class="space-y-1 text-sm text-indigo-800 dark:text-indigo-300">
+                            <li><a href="{{ url('/llms.txt') }}" class="underline font-mono">{{ url('/llms.txt') }}</a> — Concise API overview for LLM context</li>
+                            <li><a href="{{ url('/llms-full.txt') }}" class="underline font-mono">{{ url('/llms-full.txt') }}</a> — Full endpoint reference with schemas</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Recommended Token Permissions</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        For LLM agents, create a token with <code class="text-sm bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">read</code>, <code class="text-sm bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">write</code>, and <code class="text-sm bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">ai</code> permissions. This allows analyzing terms and negating them without granting sync or admin access.
+                    </p>
+
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Analyze → Negate Workflow</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">
+                        The typical LLM agent workflow is a two-step process: analyze search terms with AI, then batch-negate the ones flagged as irrelevant.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Step 1: Analyze search terms</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Run AI analysis on terms for a specific date. Each term receives a <code>should_negate</code> flag and a <code>rationale</code>.</p>
+                            <div class="relative">
+                                <pre class="code-block"><code class="language-bash">curl -X POST {{ url('/api/ai/analyze') }} \
+  -H "X-API-Token: your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "analysis_type": "date",
+    "date": "2026-02-27",
+    "model": "gemini",
+    "limit": 50
+  }'</code></pre>
+                                <button onclick="copyCode(this)" class="copy-btn">Copy</button>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Response includes per-term: <code>id</code>, <code>search_term</code>, <code>should_negate</code> (bool), <code>rationale</code> (string)</p>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Step 2: Batch negate flagged terms</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Filter terms where <code>should_negate === true</code> and send them to batch-negate. The <code>rationale</code> field from the analysis response can be passed directly.</p>
+                            <div class="relative">
+                                <pre class="code-block"><code class="language-bash">curl -X POST {{ url('/api/search-terms/batch-negate') }} \
+  -H "X-API-Token: your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "terms": [
+      {"id": 123, "rationale": "Irrelevant to business"},
+      {"id": 456, "rationale": "Competitor brand name"}
+    ],
+    "match_type": "phrase"
+  }'</code></pre>
+                                <button onclick="copyCode(this)" class="copy-btn">Copy</button>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Both <code>reason</code> and <code>rationale</code> are accepted as field names.</p>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Alternative: Single-step auto-negate</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Use <code>suggest-negatives</code> with <code>auto_negate: true</code> for a fully automated single-step workflow.</p>
+                            <div class="relative">
+                                <pre class="code-block"><code class="language-bash">curl -X POST {{ url('/api/ai/suggest-negatives') }} \
+  -H "X-API-Token: your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini",
+    "date_from": "2026-02-20",
+    "date_to": "2026-02-27",
+    "auto_negate": true,
+    "match_type": "phrase"
+  }'</code></pre>
                                 <button onclick="copyCode(this)" class="copy-btn">Copy</button>
                             </div>
                         </div>

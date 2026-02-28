@@ -1,0 +1,35 @@
+# KeywordAI API
+
+> KeywordAI is a self-hosted Google Ads search term management platform with AI-powered analysis. The REST API provides programmatic access to search terms, negative keywords, campaigns, AI analysis, and sync operations. All endpoints return JSON and require token-based authentication via `X-API-Token` header.
+
+## LLM Agent Workflow
+
+The primary use case for LLM agents is a two-step analyze-then-negate workflow:
+
+1. **Analyze**: `POST /api/ai/analyze` — Run AI analysis on search terms for a date. Returns `should_negate` (boolean) and `rationale` (string) per term.
+2. **Batch Negate**: `POST /api/search-terms/batch-negate` — Negate recommended terms in bulk. Accepts `rationale` or `reason` per term.
+
+Required token permissions: `read`, `write`, `ai`.
+
+## Documentation
+
+- [Full API Reference for LLMs](/llms-full.txt): Complete endpoint reference with request/response schemas, optimized for machine consumption.
+- [Interactive API Docs](/api/docs): Human-readable documentation with code examples.
+- [Health Check](/api/health): Public endpoint to verify API availability (no auth required).
+- [API Info](/api/info): Public endpoint with version and feature flags (no auth required).
+
+## Authentication
+
+Include your API token in every request:
+
+```
+X-API-Token: your_token_here
+```
+
+## Base URL
+
+All API endpoints are relative to your KeywordAI instance domain, e.g.:
+
+```
+https://your-instance.example.com/api/
+```
